@@ -1,0 +1,9 @@
+# Example: positional window / level, VaR and ES
+prices = load "prices.csv"
+close = select prices column=close
+rets = returns close log
+vol21 = vol rets 21
+var95 = var rets 0.95
+es95 = es rets 0.95
+print var95
+print es95

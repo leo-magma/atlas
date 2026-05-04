@@ -1,0 +1,5 @@
+# EWMA-style vol proxy (garch keyword) + naive horizon forecast
+ts = load "../../examples/prices.csv"
+model = train ts target=close algo=garch window=30
+forecast = predict model horizon=10d
+print forecast

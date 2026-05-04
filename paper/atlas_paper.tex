@@ -1,0 +1,54 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+
+\title{Atlas: A Line-Oriented DSL for Prototyping Historical Risk Metrics}
+\author{Atlas contributors}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We describe Atlas, a minimal domain-specific language for scripting
+historical return transforms, rolling volatility, value-at-risk (VaR),
+and expected shortfall (ES) on columnar market data. Atlas emphasizes
+a small assignment-oriented surface syntax, a strict separation between
+parsing and statistical primitives, and an extensible standard library
+layout suitable for teaching and rapid experimentation.
+\end{abstract}
+
+\section{Introduction}
+Market risk workflows often repeat the same sequence of operations:
+ingest tabular prices, construct returns, estimate dispersion and tail
+risk, and report scalar or vector summaries. General-purpose notebooks
+are flexible but can obscure assumptions; Atlas proposes a compact
+intermediate representation that keeps dataflow explicit.
+
+\section{Language surface}
+Programs are newline-separated statements. The primary forms are
+assignment (\texttt{name = func primary \ldots}) and printing
+(\texttt{print name}). Relative file paths in \texttt{load} resolve
+from the script directory to make examples portable.
+
+\section{Estimators}
+Let $\{r_t\}$ denote a return series. Rolling volatility uses the
+sample standard deviation over a sliding window. Historical VaR at
+confidence level $\alpha$ reports the empirical $(1-\alpha)$ quantile.
+Historical ES reports the sample mean of observations at or below the
+VaR threshold.
+
+\section{Implementation}
+The reference implementation is in Python: parsing produces an
+immutable command record; an interpreter maintains a name-to-object
+environment mapping strings to \texttt{pandas.DataFrame} values; and
+numeric kernels live in a dedicated standard-library module tree.
+
+\section{Conclusion}
+Atlas is intentionally small. Future work includes parametric and
+simulation-based VaR, portfolio-level aggregation, and optional static
+checks for schema and units.
+
+\end{document}

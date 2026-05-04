@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "atlas"
+version = "0.1.0"
+description = "Atlas — a small DSL for financial risk scripting"
+readme = "docs/README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Atlas contributors" }]
+dependencies = [
+    "numpy>=1.24",
+    "pandas>=2.0",
+    "scipy>=1.10",
+    "scikit-learn>=1.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "ruff>=0.4",
+]
+
+[project.scripts]
+atlas = "atlas.cli:main"
+neptune = "neptune.cli:main"
+hydra = "hydra.cli:main"
+chronos = "chronos.cli:main"
+athena = "athena.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["atlas*", "neptune*", "hydra*", "chronos*", "athena*", "cli*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]

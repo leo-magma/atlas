@@ -1,0 +1,7 @@
+# Chronos sample
+ts = load "prices.csv"
+clean = clean ts dropna=true
+lag1 = shift clean periods=1
+ret = diff clean column=close
+z = normalize ret method=zscore column=close
+print z

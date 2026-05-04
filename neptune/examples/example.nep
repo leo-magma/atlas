@@ -1,0 +1,13 @@
+# Neptune sample — as_of strictly before cashflows
+curve = load_curve "jgb_curve.csv"
+bond = load_bond "jgb_10y.csv"
+px = price bond curve=curve as_of=2024-01-21
+y = yield bond as_of=2024-01-21
+dur = duration bond as_of=2024-01-21
+dv = dv01 bond as_of=2024-01-21
+spr = spread bond benchmark=curve as_of=2024-01-21
+print px
+print y
+print dur
+print dv
+print spr
