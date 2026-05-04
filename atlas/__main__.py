@@ -1,4 +1,4 @@
-"""Run with: ``python -m atlas run path/to/script.risk`` (same as the ``atlas`` console command)."""
+"""Run with: ``python -m atlas run path/to/script.atl`` (same as the ``atlas`` console command)."""
 
 from .cli import main
 

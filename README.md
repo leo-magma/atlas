@@ -4,10 +4,10 @@ Atlas is a small domain-specific language (DSL) for financial risk scripting: CS
 
 ## Sibling DSLs (same repo layout)
 
-**Atlas** (equity-style `.risk`), **Neptune** (bonds `.nep`), **Hydra** (options `.hyd`), **Chronos** (time-series `.chr`), and **Athena** (ML `.ath`) are **top-level Python packages** next to each other. After `pip install -e .`, run scripts with the matching CLI, for example:
+**Atlas** (equity-style `.atl`), **Neptune** (bonds `.nep`), **Hydra** (options `.hyd`), **Chronos** (time-series `.chr`), and **Athena** (ML `.ath`) are **top-level Python packages** next to each other. After `pip install -e .`, run scripts with the matching CLI, for example:
 
 ```bash
-atlas run examples/example1.risk
+atlas run examples/example1.atl
 neptune run neptune/examples/example.nep
 hydra run hydra/examples/example.hyd
 chronos run chronos/examples/example.chr
@@ -20,13 +20,13 @@ Or the module form: `python -m atlas run …`, `python -m neptune run …`, and 
 
 ```bash
 pip install -e ".[dev]"
-atlas run examples/example1.risk
+atlas run examples/example1.atl
 ```
 
 If `atlas` is not on your `PATH` (often the case on Windows), run:
 
 ```bash
-python -m atlas run examples/example1.risk
+python -m atlas run examples/example1.atl
 ```
 
 Relative paths in `load` are resolved from **the directory containing the script file**.

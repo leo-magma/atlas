@@ -77,9 +77,11 @@ def historical_var(
     kwargs: dict[str, str],
 ) -> pd.Series:
     """Per-column historical VaR at ``level`` (default 0.95)."""
-    alpha = _confidence_level(args, kwargs)
-    q = 1.0 - alpha
-    return df.quantile(q)
+    level = _confidence_level(args, kwargs)
+    q = 1.0 - level
+    s = df.quantile(q)
+    s.name = f"var_{level:g}"
+    return s
 
 
 def parametric_var(
@@ -101,7 +103,7 @@ def parametric_var(
             out[col] = float("nan")
         else:
             out[col] = mu + sigma * float(norm.ppf(tau))
-    return pd.Series(out)
+    return pd.Series(out, name=f"var_{level:g}")
 
 
 def compute_var(
@@ -132,7 +134,7 @@ def historical_es(
         thr = q[col]
         tail = s[s <= thr]
         out[col] = float(tail.mean()) if len(tail) else float("nan")
-    return pd.Series(out)
+    return pd.Series(out, name=f"es_{level:g}")
 
 
 def parametric_es(
@@ -158,7 +160,7 @@ def parametric_es(
         else:
             # E[X | X at or below Gaussian tau-quantile] = mu - sigma * phi(z) / tau
             out[col] = mu - sigma * float(norm.pdf(z) / tau)
-    return pd.Series(out)
+    return pd.Series(out, name=f"es_{level:g}")
 
 
 def compute_es(

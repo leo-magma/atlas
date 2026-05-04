@@ -14,13 +14,13 @@ Install the package (editable or normal), then use the **`atlas` console command
 
 ```bash
 pip install -e "."
-atlas run examples/example1.risk
+atlas run examples/example1.atl
 ```
 
 If `atlas` is not found (common on Windows when Python `Scripts` is not on `PATH`), use the module form instead:
 
 ```bash
-python -m atlas run examples/example1.risk
+python -m atlas run examples/example1.atl
 ```
 
 Neptune, Hydra, Chronos, and Athena use the same pattern (`neptune run …`, `hydra run …`, `chronos run …`, `athena run …`, or `python -m neptune run …`, etc.).

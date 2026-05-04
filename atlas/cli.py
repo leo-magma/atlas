@@ -24,8 +24,8 @@ def main(argv: list[str] | None = None) -> int:
         help="Print version and exit",
     )
     sub = p.add_subparsers(dest="cmd", required=True)
-    run_p = sub.add_parser("run", help="Run a .risk script")
-    run_p.add_argument("script", help="Path to a .risk script")
+    run_p = sub.add_parser("run", help="Run a .atl (Atlas line DSL) script")
+    run_p.add_argument("script", help="Path to a .atl script")
     ns = p.parse_args(argv)
 
     if ns.cmd != "run":

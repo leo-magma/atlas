@@ -169,6 +169,17 @@ def cmd_print(
     if not arg:
         raise AtlasRuntimeError("print requires a variable name")
     value = _lookup(env, arg)
+    # Pretty-print single-scalar Series as "label: value" to avoid
+    # outputs like "close    -0.0044" for VaR/ES.
+    if isinstance(value, pd.Series) and len(value) == 1:
+        label = str(value.name) if value.name is not None else arg
+        label = label.split("_", 1)[0]  # var_0.95 -> var, es_0.95 -> es
+        try:
+            v = float(value.iloc[0])
+            print(f"{label}: {v:.6g}")
+        except Exception:
+            print(f"{label}: {value.iloc[0]}")
+        return
     print(value)
 
 

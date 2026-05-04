@@ -11,7 +11,7 @@ from .parser import parse, tokenize
 
 
 class AtlasInterpreter:
-    """Execute Atlas ``.risk`` scripts line by line."""
+    """Execute Atlas ``.atl`` scripts line by line."""
 
     def __init__(self) -> None:
         self.env: dict[str, Any] = {}
