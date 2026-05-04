@@ -21,9 +21,10 @@
 | `load` | `ts = load "x.csv"` | Resolves paths from the script directory. |
 | `load_curve` / `load_bond` / `load_option` | `curve = load_curve "c.csv"` | v0: same as CSV load. |
 | `features` | `feat = features ts methods=diff,rolling_mean` | Comma-separated `methods=` list. |
-| `train` | `model = train feat target=close algo=rf` | `window=` optional (rolling / garch). |
+| `train` | `model = train feat target=close algo=rf target_shift=1 seed=0` | `target_shift=` helps avoid time-series leakage by predicting a future target from current features. `window=` optional (rolling / garch). |
 | `predict` | `pred = predict model feat` | Or `predict model horizon=10d` (naive v0). |
 | `evaluate` | `s = evaluate model feat target=close metrics=rmse,r2` | |
+| `backtest` | `s = backtest feat target=close algo=rf folds=5 min_train=50 target_shift=1 metrics=rmse,r2` | Walk-forward evaluation (time-series CV). Returns mean metrics across folds. |
 | `load_model` | `m = load_model "m.pkl"` | Or `from=` as keyword if extended later. |
 
 ## Metrics (evaluate)

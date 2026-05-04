@@ -6,8 +6,6 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import Lasso, LinearRegression, Ridge
 
 from athena.errors import AthenaRuntimeError
 
@@ -28,6 +26,12 @@ def _require_extra(pkg: str) -> Any:
 
 
 def build_regressor(name: str) -> Any:
+    try:
+        from sklearn.ensemble import RandomForestRegressor  # type: ignore
+        from sklearn.linear_model import Lasso, LinearRegression, Ridge  # type: ignore
+    except ImportError as e:
+        raise AthenaRuntimeError("algo requires scikit-learn: pip install scikit-learn") from e
+
     n = name.lower()
     if n == "linear":
         return LinearRegression()
@@ -52,8 +56,14 @@ def train_table(
     target: str,
     algo: str,
     window: int = 20,
+    target_shift: int = 0,
+    seed: int = 0,
 ) -> TrainedModel:
-    """Supervised train on numeric feature columns (all except target by default)."""
+    """Supervised train on numeric feature columns (all except target by default).
+
+    ``target_shift`` is a simple leakage guard for time-series: when > 0, the target is shifted
+    backward by that many rows (predict future target from current features).
+    """
     if target not in feat.columns:
         raise AthenaRuntimeError(f"target column {target!r} not in frame")
     num_cols = list(feat.select_dtypes(include=["number"]).columns)
@@ -63,24 +73,39 @@ def train_table(
     if not feature_columns:
         raise AthenaRuntimeError("No feature columns after excluding target")
 
+    # Keep chronological order for time-series.
+    feat = feat.sort_index()
+
     X = feat[feature_columns].replace([np.inf, -np.inf], np.nan).fillna(0.0)
     y = feat[target].replace([np.inf, -np.inf], np.nan).ffill().fillna(0.0)
+    if target_shift < 0:
+        raise AthenaRuntimeError("target_shift must be >= 0")
+    if target_shift > 0:
+        y = y.shift(-target_shift)
+        X = X.iloc[:-target_shift, :]
+        y = y.iloc[:-target_shift]
 
     a = algo.lower()
     if a in ("kmeans",):
         km = fit_kmeans(X, n_clusters=3)
         tm = TrainedModel(algo=a, estimator=km, feature_columns=feature_columns, target_column=target)
         tm.extra["kind"] = "cluster"
+        tm.extra["seed"] = seed
+        tm.extra["target_shift"] = target_shift
         return tm
     if a in ("isolation_forest",):
         iso = fit_isolation_forest(X)
         tm = TrainedModel(algo=a, estimator=iso, feature_columns=feature_columns, target_column=target)
         tm.extra["kind"] = "anomaly"
+        tm.extra["seed"] = seed
+        tm.extra["target_shift"] = target_shift
         return tm
     if a in ("logistic",):
         clf = fit_logistic(X, y.astype(int))
         tm = TrainedModel(algo=a, estimator=clf, feature_columns=feature_columns, target_column=target)
         tm.extra["kind"] = "classify"
+        tm.extra["seed"] = seed
+        tm.extra["target_shift"] = target_shift
         return tm
     if a in ("garch",):
         # Vol proxy on target level changes
@@ -91,7 +116,12 @@ def train_table(
             estimator=vol_model,
             feature_columns=feature_columns,
             target_column=target,
-            extra={"last_level": float(y.iloc[-1]), "kind": "garch"},
+            extra={
+                "last_level": float(y.iloc[-1]),
+                "kind": "garch",
+                "seed": seed,
+                "target_shift": target_shift,
+            },
         )
         return tm
 
@@ -102,6 +132,11 @@ def train_table(
         estimator=est,
         feature_columns=feature_columns,
         target_column=target,
-        extra={"last_level": float(y.iloc[-1]), "kind": "sklearn_regress"},
+        extra={
+            "last_level": float(y.iloc[-1]),
+            "kind": "sklearn_regress",
+            "seed": seed,
+            "target_shift": target_shift,
+        },
     )
     return tm

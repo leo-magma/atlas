@@ -110,6 +110,61 @@ def cmd_shift(
     return shift_mod.shift_frame(df, p)
 
 
+def cmd_validate(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    """Validate a time-series frame and return a small report dict."""
+    df = _lookup(env, arg or "")
+    if not isinstance(df, pd.DataFrame):
+        raise ChronosRuntimeError("validate expects a DataFrame")
+
+    report: dict[str, Any] = {}
+    report["rows"] = int(df.shape[0])
+    report["cols"] = int(df.shape[1])
+    report["columns"] = list(map(str, df.columns))
+
+    idx = df.index
+    report["index_type"] = type(idx).__name__
+    report["index_is_monotonic_increasing"] = bool(getattr(idx, "is_monotonic_increasing", False))
+
+    try:
+        report["index_has_duplicates"] = bool(idx.has_duplicates)
+    except Exception:
+        report["index_has_duplicates"] = False
+
+    # Missing values summary (top-level only)
+    na_total = int(df.isna().sum().sum())
+    report["na_total"] = na_total
+    if na_total:
+        na_by_col = df.isna().sum().sort_values(ascending=False)
+        report["na_by_column_top5"] = {str(k): int(v) for k, v in na_by_col.head(5).items()}
+    else:
+        report["na_by_column_top5"] = {}
+
+    # DatetimeIndex specific checks
+    if isinstance(idx, pd.DatetimeIndex):
+        report["index_min"] = idx.min().isoformat() if len(idx) else None
+        report["index_max"] = idx.max().isoformat() if len(idx) else None
+        report["index_is_timezone_aware"] = idx.tz is not None
+    else:
+        report["index_min"] = None
+        report["index_max"] = None
+        report["index_is_timezone_aware"] = False
+
+    strict = _truthy(kwargs.get("strict"))
+    if strict:
+        if report["index_has_duplicates"]:
+            raise ChronosRuntimeError("validate(strict=true): index has duplicates")
+        if isinstance(idx, pd.DatetimeIndex) and idx.isna().any():
+            raise ChronosRuntimeError("validate(strict=true): datetime index contains NaT")
+
+    return report
+
+
 def cmd_diff(
     arg: str | None,
     args: list[str],
@@ -187,6 +242,7 @@ def get_command_table() -> dict[str, CommandFn]:
         "join": cmd_join,
         "resample": cmd_resample,
         "shift": cmd_shift,
+        "validate": cmd_validate,
         "diff": cmd_diff,
         "normalize": cmd_normalize,
         "rolling_mean": cmd_rolling_mean,

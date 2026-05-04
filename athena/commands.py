@@ -111,7 +111,16 @@ def cmd_train(
     if not target:
         raise AthenaRuntimeError("train requires target=COLUMN")
     window = int(kwargs.get("window", "20"))
-    return train_table(feat, target=target, algo=algo, window=window)
+    target_shift = int(kwargs.get("target_shift", "0"))
+    seed = int(kwargs.get("seed", "0"))
+    return train_table(
+        feat,
+        target=target,
+        algo=algo,
+        window=window,
+        target_shift=target_shift,
+        seed=seed,
+    )
 
 
 def _parse_horizon(spec: str) -> int:
@@ -232,6 +241,109 @@ def cmd_evaluate(
     return scores
 
 
+def cmd_backtest(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    """Walk-forward evaluation (time-series CV) to reduce leakage."""
+    if not arg:
+        raise AthenaRuntimeError("backtest requires a feature frame variable")
+    feat = _lookup(env, arg)
+    if not isinstance(feat, pd.DataFrame):
+        raise AthenaRuntimeError("backtest expects a DataFrame")
+    target = kwargs.get("target")
+    algo = kwargs.get("algo", "linear")
+    if not target:
+        raise AthenaRuntimeError("backtest requires target=COLUMN")
+    if target not in feat.columns:
+        raise AthenaRuntimeError(f"backtest target {target!r} not in frame")
+
+    folds = int(kwargs.get("folds", "5"))
+    min_train = int(kwargs.get("min_train", "50"))
+    seed = int(kwargs.get("seed", "0"))
+    target_shift = int(kwargs.get("target_shift", "1"))
+    window = int(kwargs.get("window", "20"))
+
+    metrics_spec = kwargs.get("metrics", "rmse")
+    metrics = [
+        m.strip()
+        for m in metrics_spec.replace("[", "").replace("]", "").split(",")
+        if m.strip()
+    ]
+
+    feat = feat.sort_index()
+    n = int(feat.shape[0])
+    if n < (min_train + folds):
+        raise AthenaRuntimeError(f"backtest needs more rows (have {n}, need >= {min_train + folds})")
+
+    fold_size = max(1, (n - min_train) // folds)
+    per_fold: list[dict[str, float]] = []
+    for i in range(folds):
+        train_end = min_train + i * fold_size
+        test_end = min(n, train_end + fold_size)
+        if test_end <= train_end:
+            break
+
+        train_df = feat.iloc[:train_end].copy()
+        test_df = feat.iloc[train_end:test_end].copy()
+
+        tm = train_table(
+            train_df,
+            target=target,
+            algo=algo,
+            window=window,
+            target_shift=target_shift,
+            seed=seed,
+        )
+
+        # Align test slice with target_shift.
+        y = test_df[target].replace([np.inf, -np.inf], np.nan).ffill().fillna(0.0)
+        if target_shift < 0:
+            raise AthenaRuntimeError("backtest target_shift must be >= 0")
+        if target_shift > 0:
+            y = y.shift(-target_shift).iloc[:-target_shift]
+            test_eval = test_df.iloc[:-target_shift].copy()
+        else:
+            test_eval = test_df
+
+        p = tm.predict_frame(test_eval)
+        yy = y.to_numpy()
+
+        scores: dict[str, float] = {}
+        for m in metrics:
+            key = m.lower()
+            if key == "rmse":
+                scores["rmse"] = _metric_rmse(yy, p)
+            elif key == "mae":
+                scores["mae"] = _metric_mae(yy, p)
+            elif key == "mape":
+                scores["mape"] = _metric_mape(yy, p)
+            elif key == "r2":
+                scores["r2"] = _metric_r2(yy, p)
+            elif key == "sharpe":
+                scores["sharpe"] = _metric_sharpe(yy, p)
+            elif key == "drawdown":
+                scores["drawdown"] = _metric_drawdown(yy, p)
+            elif key == "accuracy":
+                scores["accuracy"] = _metric_accuracy(yy, p)
+            else:
+                raise AthenaRuntimeError(f"Unknown metric: {m!r}")
+        per_fold.append(scores)
+
+    if not per_fold:
+        raise AthenaRuntimeError("backtest produced no folds (check folds/min_train)")
+
+    keys = sorted({k for d in per_fold for k in d})
+    out: dict[str, float] = {}
+    for k in keys:
+        out[k] = float(np.mean([d[k] for d in per_fold if k in d]))
+    out["folds_used"] = float(len(per_fold))
+    return out
+
+
 def cmd_load_model(
     arg: str | None,
     args: list[str],
@@ -268,6 +380,7 @@ _COMMANDS: dict[str, CommandFn] = {
     "train": cmd_train,
     "predict": cmd_predict,
     "evaluate": cmd_evaluate,
+    "backtest": cmd_backtest,
     "load_model": cmd_load_model,
     "print": cmd_print,
 }
