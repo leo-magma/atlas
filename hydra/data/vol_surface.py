@@ -20,12 +20,25 @@ class VolSurface:
     @classmethod
     def from_csv(cls, path: str, as_of: pd.Timestamp) -> VolSurface:
         df = pd.read_csv(path)
+        required = {"maturity", "strike", "vol"}
+        missing = sorted(required - set(df.columns))
+        if missing:
+            raise HydraRuntimeError(f"Vol surface CSV missing required columns: {missing}")
+        if df.empty:
+            raise HydraRuntimeError("Vol surface CSV is empty")
         mats = []
         for m in df["maturity"]:
             mt = pd.to_datetime(m)
-            mats.append(max((mt - as_of).days / 365.0, 1e-6))
+            t = (mt - as_of).days / 365.0
+            if t <= 0:
+                raise HydraRuntimeError("Vol surface maturities must be after as_of")
+            mats.append(t)
         strikes = np.array(df["strike"].astype(float), dtype=float)
         vols = np.array(df["vol"].astype(float), dtype=float)
+        if np.any(strikes <= 0):
+            raise HydraRuntimeError("Vol surface strikes must be positive")
+        if np.any(vols <= 0):
+            raise HydraRuntimeError("Vol surface vols must be positive")
         return cls(np.array(mats, dtype=float), strikes, vols)
 
     def interpolate(self, maturity_years: float, strike: float) -> float:
@@ -36,5 +49,7 @@ class VolSurface:
             if np.isnan(v):
                 raise HydraRuntimeError("Vol interpolation out of grid hull")
             return v
+        if len(self.vols) == 0:
+            raise HydraRuntimeError("Vol surface is empty")
         j = int(np.argmin((self.strikes - strike) ** 2 + (self.maturities - maturity_years) ** 2))
         return float(self.vols[j])

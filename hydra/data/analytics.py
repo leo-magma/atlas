@@ -12,6 +12,8 @@ from .option import Option
 
 
 def _d1_d2(S: float, K: float, T: float, r: float, q: float, sigma: float) -> tuple[float, float]:
+    if S <= 0 or K <= 0:
+        raise HydraRuntimeError("spot and strike must be positive")
     if T <= 0 or sigma <= 0:
         raise HydraRuntimeError("T and sigma must be positive")
     vsqrt = sigma * math.sqrt(T)
@@ -63,8 +65,26 @@ def bs_greeks(opt: Option, T: float, sigma: float) -> dict[str, float]:
 def implied_vol(opt: Option, T: float, market_price: float) -> float:
     if market_price <= 0:
         raise HydraRuntimeError("market price must be positive")
+    if T <= 0:
+        raise HydraRuntimeError("T must be positive for implied volatility")
+    disc_s = opt.spot * math.exp(-opt.div_yield * T)
+    disc_k = opt.strike * math.exp(-opt.rate * T)
+    if opt.kind == "call":
+        lower, upper = max(disc_s - disc_k, 0.0), disc_s
+    elif opt.kind == "put":
+        lower, upper = max(disc_k - disc_s, 0.0), disc_k
+    else:
+        raise HydraRuntimeError(f"Unknown option kind: {opt.kind!r}")
+    eps = 1e-10
+    if market_price < lower - eps or market_price > upper + eps:
+        raise HydraRuntimeError(
+            f"market price violates no-arbitrage bounds [{lower:.6g}, {upper:.6g}]"
+        )
 
     def f(sig: float) -> float:
         return bs_price(opt, T, sig) - market_price
 
-    return float(brentq(f, 1e-6, 5.0, maxiter=200))
+    try:
+        return float(brentq(f, 1e-6, 5.0, maxiter=200))
+    except ValueError as exc:
+        raise HydraRuntimeError("Could not solve implied volatility within bracket [1e-6, 5.0]") from exc

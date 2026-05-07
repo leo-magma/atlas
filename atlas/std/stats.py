@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy.stats import norm
+from scipy.stats import jarque_bera, norm
 
 from ..errors import AtlasRuntimeError
 
@@ -25,7 +25,17 @@ def _confidence_level(args: list[str], kwargs: dict[str, str]) -> float:
         level = args[0]
     if level is None:
         level = "0.95"
-    return float(level)
+    out = float(level)
+    if not 0.0 < out < 1.0:
+        raise AtlasRuntimeError("level must be strictly between 0 and 1")
+    return out
+
+
+def _non_empty_numeric(df: pd.DataFrame, label: str) -> pd.DataFrame:
+    out = df.apply(pd.to_numeric, errors="coerce")
+    if out.dropna(how="all").empty:
+        raise AtlasRuntimeError(f"{label} requires at least one numeric observation")
+    return out
 
 
 def _var_method(kwargs: dict[str, str]) -> tuple[str, dict[str, str]]:
@@ -47,6 +57,9 @@ def compute_returns(
         method = "simple"
     s = _series_from_frame(df)
     if method in ("log", "ln"):
+        bad = s.dropna() <= 0
+        if bool(bad.any()):
+            raise AtlasRuntimeError("log returns require strictly positive price levels")
         out = np.log(s / s.shift(1))
     elif method in ("simple", "pct", "arithmetic"):
         out = s.pct_change()
@@ -67,6 +80,8 @@ def rolling_vol(
     if window is None:
         window = "21"
     w = int(window)
+    if w < 2:
+        raise AtlasRuntimeError("vol window must be at least 2")
     s = _series_from_frame(df)
     return s.rolling(w).std().to_frame(name=f"vol_{w}")
 
@@ -78,6 +93,7 @@ def historical_var(
 ) -> pd.Series:
     """Per-column historical VaR at ``level`` (default 0.95)."""
     level = _confidence_level(args, kwargs)
+    df = _non_empty_numeric(df, "historical VaR")
     q = 1.0 - level
     s = df.quantile(q)
     s.name = f"var_{level:g}"
@@ -91,6 +107,7 @@ def parametric_var(
 ) -> pd.Series:
     """Gaussian VaR at the same tail mass as historical (left tail ``1 - level``)."""
     level = _confidence_level(args, kwargs)
+    df = _non_empty_numeric(df, "parametric VaR")
     tau = 1.0 - level
     out: dict[Any, float] = {}
     for col in df.columns:
@@ -126,6 +143,7 @@ def historical_es(
 ) -> pd.Series:
     """Mean of returns at or below the historical VaR threshold (per column)."""
     level = _confidence_level(args, kwargs)
+    df = _non_empty_numeric(df, "historical ES")
     alpha = 1.0 - level
     q = df.quantile(alpha)
     out: dict[Any, float] = {}
@@ -144,6 +162,7 @@ def parametric_es(
 ) -> pd.Series:
     """Gaussian expected shortfall (left tail mean) at confidence ``level``."""
     level = _confidence_level(args, kwargs)
+    df = _non_empty_numeric(df, "parametric ES")
     tau = 1.0 - level
     if tau <= 0.0 or tau >= 1.0:
         raise AtlasRuntimeError("level must be strictly between 0 and 1 for parametric ES")
@@ -228,3 +247,106 @@ def sharpe_ratio(
     if sd == 0.0 or not np.isfinite(sd):
         return pd.Series({"sharpe": float("nan")})
     return pd.Series({"sharpe": (ex / sd) * (ann**0.5)})
+
+
+def summary(df: pd.DataFrame) -> pd.Series:
+    """Basic distribution diagnostics for a single return series."""
+    s = _series_from_frame(df).astype(float).dropna()
+    if len(s) == 0:
+        return pd.Series(
+            {
+                "n": 0.0,
+                "mean": float("nan"),
+                "std": float("nan"),
+                "skew": float("nan"),
+                "kurt": float("nan"),
+                "min": float("nan"),
+                "p05": float("nan"),
+                "p50": float("nan"),
+                "p95": float("nan"),
+                "max": float("nan"),
+            }
+        )
+    qs = s.quantile([0.05, 0.5, 0.95])
+    return pd.Series(
+        {
+            "n": float(len(s)),
+            "mean": float(s.mean()),
+            "std": float(s.std(ddof=1)),
+            "skew": float(s.skew()),
+            "kurt": float(s.kurt()),
+            "min": float(s.min()),
+            "p05": float(qs.loc[0.05]),
+            "p50": float(qs.loc[0.5]),
+            "p95": float(qs.loc[0.95]),
+            "max": float(s.max()),
+        }
+    )
+
+
+def jb_test(df: pd.DataFrame) -> pd.Series:
+    """Jarque–Bera normality test for a single series."""
+    s = _series_from_frame(df).astype(float).dropna()
+    if len(s) < 3:
+        return pd.Series({"jb": float("nan"), "pvalue": float("nan")})
+    stat, p = jarque_bera(s.to_numpy())
+    return pd.Series({"jb": float(stat), "pvalue": float(p)})
+
+
+def drawdown(df: pd.DataFrame) -> pd.DataFrame:
+    """Return a drawdown series computed from a return stream."""
+    s = _series_from_frame(df).astype(float).fillna(0.0)
+    wealth = (1.0 + s).cumprod()
+    peak = wealth.cummax()
+    dd = wealth / peak - 1.0
+    return dd.to_frame(name="drawdown")
+
+
+def max_drawdown(df: pd.DataFrame) -> pd.Series:
+    d = drawdown(df).iloc[:, 0]
+    out = float(d.min()) if len(d) else float("nan")
+    return pd.Series({"max_drawdown": out})
+
+
+def lincomb(df: pd.DataFrame, weights: list[float]) -> pd.DataFrame:
+    """Linear combination of columns in a wide return matrix."""
+    if df.shape[1] < 1:
+        raise AtlasRuntimeError("lincomb requires at least one column")
+    if len(weights) != df.shape[1]:
+        raise AtlasRuntimeError(f"weights length {len(weights)} must match columns {df.shape[1]}")
+    w = np.asarray(weights, dtype=float)
+    vals = df.fillna(0.0).to_numpy() @ w
+    return pd.DataFrame(vals, index=df.index, columns=["portfolio"])
+
+
+def var_backtest(returns: pd.DataFrame, var_value: float | pd.Series, level: float) -> pd.Series:
+    """Kupiec-style exceedance diagnostics for a VaR threshold.
+
+    Convention: VaR is a left-tail quantile (negative for losses). An exceedance is r <= VaR.
+    """
+    if not 0.0 < float(level) < 1.0:
+        raise AtlasRuntimeError("level must be strictly between 0 and 1")
+    s = _series_from_frame(returns).astype(float).dropna()
+    if len(s) == 0:
+        return pd.Series({"n": 0.0, "exceed": 0.0, "rate": float("nan"), "expected": float("nan")})
+    if isinstance(var_value, pd.Series) and len(var_value) > 1:
+        v = var_value.astype(float).dropna()
+        joined = pd.concat([s.rename("returns"), v.rename("var")], axis=1, join="inner").dropna()
+        if joined.empty:
+            raise AtlasRuntimeError("var_backtest returns and VaR series have no overlapping index")
+        hit = (joined["returns"] <= joined["var"]).astype(int)
+    else:
+        v = float(var_value.iloc[0]) if isinstance(var_value, pd.Series) else float(var_value)
+        hit = (s <= v).astype(int)
+    n = int(len(hit))
+    x = int(hit.sum())
+    rate = x / n if n else float("nan")
+    expected = 1.0 - float(level)
+    return pd.Series(
+        {
+            "n": float(n),
+            "exceed": float(x),
+            "rate": float(rate),
+            "expected": float(expected),
+        }
+    )

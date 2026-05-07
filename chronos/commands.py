@@ -117,7 +117,16 @@ def cmd_validate(
     env: Env,
     base_dir: str | None,
 ):
-    """Validate a time-series frame and return a small report dict."""
+    """Validate a time-series frame and return a report dict.
+
+    This is intentionally strict about time-series hygiene, but configurable via kwargs:
+    - strict=true: fail on duplicates / NaT in DatetimeIndex
+    - require_datetime=true: fail if index is not DatetimeIndex
+    - require_columns=col1,col2: fail if missing
+    - numeric_columns=col1,col2: fail if missing or not numeric
+    - freq=1D|B|W|M: check inferred/expected frequency (best-effort)
+    - max_gap=3D: fail if max index gap exceeds the threshold (best-effort)
+    """
     df = _lookup(env, arg or "")
     if not isinstance(df, pd.DataFrame):
         raise ChronosRuntimeError("validate expects a DataFrame")
@@ -136,6 +145,10 @@ def cmd_validate(
     except Exception:
         report["index_has_duplicates"] = False
 
+    report["index_has_na"] = False
+    if isinstance(idx, pd.DatetimeIndex):
+        report["index_has_na"] = bool(idx.isna().any())
+
     # Missing values summary (top-level only)
     na_total = int(df.isna().sum().sum())
     report["na_total"] = na_total
@@ -150,17 +163,98 @@ def cmd_validate(
         report["index_min"] = idx.min().isoformat() if len(idx) else None
         report["index_max"] = idx.max().isoformat() if len(idx) else None
         report["index_is_timezone_aware"] = idx.tz is not None
+        # Frequency / gap diagnostics (best-effort)
+        try:
+            report["inferred_freq"] = pd.infer_freq(idx)  # may be None
+        except Exception:
+            report["inferred_freq"] = None
+        if len(idx) >= 2:
+            d = idx.to_series().diff().dropna()
+            report["min_gap"] = str(d.min())
+            report["max_gap"] = str(d.max())
+            report["median_gap"] = str(d.median())
+        else:
+            report["min_gap"] = None
+            report["max_gap"] = None
+            report["median_gap"] = None
     else:
         report["index_min"] = None
         report["index_max"] = None
         report["index_is_timezone_aware"] = False
+        report["inferred_freq"] = None
+        report["min_gap"] = None
+        report["max_gap"] = None
+        report["median_gap"] = None
 
     strict = _truthy(kwargs.get("strict"))
+    require_datetime = _truthy(kwargs.get("require_datetime"))
+    if require_datetime and not isinstance(idx, pd.DatetimeIndex):
+        raise ChronosRuntimeError("validate(require_datetime=true): index is not a DatetimeIndex")
+
+    # Column requirements
+    req_cols = (kwargs.get("require_columns") or "").strip()
+    if req_cols:
+        needed = [c.strip() for c in req_cols.replace("[", "").replace("]", "").split(",") if c.strip()]
+        missing = [c for c in needed if c not in df.columns]
+        report["missing_required_columns"] = missing
+        if missing:
+            raise ChronosRuntimeError(f"validate: missing required columns: {missing}")
+    else:
+        report["missing_required_columns"] = []
+
+    num_cols = (kwargs.get("numeric_columns") or "").strip()
+    if num_cols:
+        needed = [c.strip() for c in num_cols.replace("[", "").replace("]", "").split(",") if c.strip()]
+        missing = [c for c in needed if c not in df.columns]
+        non_numeric: list[str] = []
+        for c in needed:
+            if c in df.columns:
+                if not pd.api.types.is_numeric_dtype(df[c]):
+                    non_numeric.append(c)
+        report["missing_numeric_columns"] = missing
+        report["non_numeric_columns"] = non_numeric
+        if missing:
+            raise ChronosRuntimeError(f"validate: missing numeric columns: {missing}")
+        if non_numeric:
+            raise ChronosRuntimeError(f"validate: expected numeric columns but got non-numeric: {non_numeric}")
+    else:
+        report["missing_numeric_columns"] = []
+        report["non_numeric_columns"] = []
+
+    # Expected frequency / max gap checks (best-effort)
+    exp_freq = (kwargs.get("freq") or "").strip()
+    if exp_freq:
+        report["expected_freq"] = exp_freq
+        if isinstance(idx, pd.DatetimeIndex):
+            inferred = report.get("inferred_freq")
+            report["freq_matches"] = bool(inferred == exp_freq)
+        else:
+            report["freq_matches"] = False
+    else:
+        report["expected_freq"] = None
+        report["freq_matches"] = None
+
+    max_gap_spec = (kwargs.get("max_gap") or "").strip()
+    if max_gap_spec and isinstance(idx, pd.DatetimeIndex) and report.get("max_gap") is not None:
+        try:
+            thr = pd.to_timedelta(max_gap_spec)
+            # report["max_gap"] is a string, reparse from index diffs
+            d = idx.to_series().diff().dropna()
+            report["max_gap_exceeds"] = bool(d.max() > thr)
+            if report["max_gap_exceeds"]:
+                raise ChronosRuntimeError(f"validate: max_gap exceeds {thr}")
+        except ValueError:
+            raise ChronosRuntimeError(f"validate: could not parse max_gap={max_gap_spec!r}")
+    else:
+        report["max_gap_exceeds"] = None
+
     if strict:
         if report["index_has_duplicates"]:
             raise ChronosRuntimeError("validate(strict=true): index has duplicates")
         if isinstance(idx, pd.DatetimeIndex) and idx.isna().any():
             raise ChronosRuntimeError("validate(strict=true): datetime index contains NaT")
+        if report["index_is_monotonic_increasing"] is False:
+            raise ChronosRuntimeError("validate(strict=true): index is not monotonic increasing")
 
     return report
 

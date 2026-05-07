@@ -1,0 +1,73 @@
+{% extends "runner/base.html" %}
+{% block content %}
+  <header class="header">
+    <div>
+      <h1 class="h1">Overview</h1>
+      <div class="sub">Atlas Suite UI — run DSL scripts with live progress, logs, and input inspection.</div>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2 class="h2">What is Atlas Suite?</h2>
+    <div class="muted">
+      Atlas Suite is a collection of sibling DSL runtimes focused on quantitative finance workflows. Each DSL
+      is a small, line-oriented language that executes a pipeline of named steps (load → transform → compute → print).
+      This UI lets you upload scripts, run them, and inspect artifacts (inputs, output, errors) in a reproducible way.
+    </div>
+  </section>
+
+  <section class="grid" style="margin-top:12px">
+    <div class="card">
+      <h2 class="h2">DSLs</h2>
+      <div class="muted" style="margin-bottom:10px">
+        Each page is dedicated to a DSL. Scripts are executed from their upload folder so relative <span class="mono">load "x.csv"</span>
+        references work when you upload the CSV next to the script.
+      </div>
+      <div class="examples">
+        <div class="example-item">
+          <div class="mono">Atlas (.atl)</div>
+          <div class="muted small">Risk scripting: returns, volatility, VaR/ES, corr/cov, beta, Sharpe, drawdown, diagnostics.</div>
+        </div>
+        <div class="example-item">
+          <div class="mono">Chronos (.chr)</div>
+          <div class="muted small">Time-series ETL: load/clean/join/resample/shift/diff/normalize + validation.</div>
+        </div>
+        <div class="example-item">
+          <div class="mono">Hydra (.hyd)</div>
+          <div class="muted small">Options analytics: Black–Scholes pricing, Greeks, implied volatility.</div>
+        </div>
+        <div class="example-item">
+          <div class="mono">Neptune (.nep)</div>
+          <div class="muted small">Fixed-income analytics: curve/bond loaders and standard bond measures.</div>
+        </div>
+        <div class="example-item">
+          <div class="mono">Athena (.ath)</div>
+          <div class="muted small">ML layer: features → train/predict/evaluate/backtest, model IO (optional deps).</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="h2">How to use this UI</h2>
+      <div class="examples">
+        <div class="example-item">
+          <div class="mono">1) Upload</div>
+          <div class="muted small">Pick a DSL, upload a script file, and optionally upload CSV/data files referenced by <span class="mono">load</span>.</div>
+        </div>
+        <div class="example-item">
+          <div class="mono">2) Run</div>
+          <div class="muted small">Jobs start immediately (local thread). Optionally enable async workers via Celery.</div>
+        </div>
+        <div class="example-item">
+          <div class="mono">3) Observe</div>
+          <div class="muted small">Progress updates continuously. Output and errors stream in near real-time.</div>
+        </div>
+        <div class="example-item">
+          <div class="mono">4) Inspect inputs</div>
+          <div class="muted small">Job detail pages let you view the script and only the data files actually used by <span class="mono">load</span>.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+

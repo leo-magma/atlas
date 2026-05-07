@@ -28,6 +28,7 @@ AthenaInterpreter().run_file("athena/examples/stock_prediction.ath")
 - **`features`**: `diff`, `pct_change`, `rolling_mean`, `rolling_std`, `zscore`, `normalize`, `volatility`, `correlation`, `pca`, plus **`duration`**, **`convexity`**, **`spread`** when those columns already exist on the frame.
 - **`train`**: `linear`, `ridge`, `lasso`, `rf`, `garch` (EWMA volatility proxy), `kmeans`, `isolation_forest`, `logistic`. **`lightgbm`** / **`xgboost`** are optional dependencies (clear error if missing).
 - **`predict`**: with `horizon=10d`-style kwargs, v0 uses a **naive constant-level** forecast.
+- **`backtest`**: walk-forward evaluation on a feature frame (`folds=`, `min_train=`, `target_shift=`), intended to reduce time-series leakage.
 
 Full specification: [SPEC.md](SPEC.md). Grammar reference: [../docs/athena-dsl.md](../docs/athena-dsl.md).
 

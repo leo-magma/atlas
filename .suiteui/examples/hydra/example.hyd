@@ -1,0 +1,7 @@
+# Hydra sample — as_of must be before option maturity for positive T
+opt = load_option "spx_options.csv"
+vol = load_vol_surface "spx_vol.csv" as_of=2024-01-02
+g = greeks opt model=bs vol_surface=vol as_of=2024-01-02
+p = price opt model=bs vol_surface=vol as_of=2024-01-02
+print g
+print p

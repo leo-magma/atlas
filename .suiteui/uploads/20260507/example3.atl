@@ -1,0 +1,19 @@
+# Wide prices: bind returns, covariance / correlation, Sharpe, parametric risk
+prices = load "prices_wide.csv"
+ca = select prices column=close_a
+cb = select prices column=close_b
+ra = returns ca log
+rb = returns cb log
+rets = bind ra rb
+cm = cov rets
+cr = corr rets
+bet = beta ra mkt=rb
+sh = sharpe ra periods=252
+pv = var ra level=0.95 method=parametric
+pe = es ra level=0.95 method=parametric
+print cm
+print cr
+print bet
+print sh
+print pv
+print pe

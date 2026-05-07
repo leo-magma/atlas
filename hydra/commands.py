@@ -31,7 +31,10 @@ def _as_of(kwargs: dict[str, str]) -> date:
 
 
 def _year_fraction(opt: Option, as_of: date) -> float:
-    return max((pd.Timestamp(opt.maturity) - pd.Timestamp(as_of)).days / 365.0, 1e-8)
+    t = (pd.Timestamp(opt.maturity) - pd.Timestamp(as_of)).days / 365.0
+    if t <= 0:
+        raise HydraRuntimeError("Option maturity must be after as_of")
+    return float(t)
 
 
 def _sigma(opt: Option, T: float, kwargs: dict[str, str], env: Env) -> float:
@@ -57,6 +60,8 @@ def cmd_load_option(
         raise HydraRuntimeError("load_option requires a path")
     path = resolve_path(arg.strip('"').strip("'"), base_dir)
     df = pd.read_csv(path)
+    if df.empty:
+        raise HydraRuntimeError("Option CSV is empty")
     return Option.from_csv_row(df.iloc[0])
 
 

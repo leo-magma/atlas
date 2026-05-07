@@ -1,0 +1,130 @@
+{% extends "runner/base.html" %}
+{% block content %}
+  <header class="header">
+    <div>
+      <h1 class="h1">Job #{{ job.id }} — {{ job.dsl|capfirst }}</h1>
+      <div class="mono muted small">{{ job.uploaded_file.name }}</div>
+      <div class="sub">Live status with polling.</div>
+    </div>
+    <div class="header-actions">
+      <a class="btn secondary" href="{% url 'dsl_page' dsl=job.dsl %}">Back</a>
+      {% if job.status == "running" or job.status == "queued" %}
+        <form method="post" action="{% url 'job_cancel' job_id=job.id %}" style="display:inline">
+          {% csrf_token %}
+          <button class="btn secondary danger" type="submit">Cancel</button>
+        </form>
+      {% endif %}
+      <a class="btn secondary" href="{% url 'job_download' job_id=job.id kind='output' %}">Download output</a>
+      <a class="btn secondary" href="{% url 'job_download' job_id=job.id kind='error' %}">Download error</a>
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="row">
+      <div class="field grow">
+        <div class="muted small">Status</div>
+        <div class="pill" id="statusPill">{{ job.status }}</div>
+      </div>
+      <div class="field grow">
+        <div class="muted small">Progress</div>
+        <div class="progress">
+          <div class="progress-bar" id="progressBar" style="width: {{ job.progress }}%"></div>
+        </div>
+        <div class="mono small" id="progressText">{{ job.progress }}%</div>
+      </div>
+    </div>
+
+    <div class="jobgrid">
+      <div class="pane pane-left">
+        <h2 class="h2">Inputs</h2>
+        <div class="row" style="align-items:center; margin-top:6px">
+          <div class="field grow">
+            <label>File</label>
+            <select id="inputSelect">
+              {% for f in input_files %}
+                <option value="{{ f }}">{{ f }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="btn secondary" id="loadInputBtn" type="button">View</button>
+          </div>
+        </div>
+        <pre class="log log-flex" id="inputText" style="margin-top:10px"></pre>
+      </div>
+
+      <div class="pane pane-right">
+        <h2 class="h2">Output</h2>
+        <pre class="log log-flex" id="out">{{ job.output_text }}</pre>
+        <h2 class="h2" style="margin-top:10px">Error</h2>
+        <pre class="log log-error error" id="err">{{ job.error_text }}</pre>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    const jobId = {{ job.id }};
+    const apply = (data) => {
+      const status = document.getElementById("statusPill");
+      status.textContent = data.status;
+      status.className = `pill ${data.status}`;
+
+      const bar = document.getElementById("progressBar");
+      bar.style.width = `${data.progress}%`;
+      document.getElementById("progressText").textContent = `${data.progress}%`;
+
+      document.getElementById("out").textContent = data.output_text || "";
+      document.getElementById("err").textContent = data.error_text || "";
+    };
+
+    // WebSocket first (real-time). Fallback to polling if WS fails.
+    const scheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const wsUrl = `${scheme}://${window.location.host}/ws/job/${jobId}/`;
+    let wsOk = false;
+
+    try {
+      const ws = new WebSocket(wsUrl);
+      ws.onopen = () => { wsOk = true; };
+      ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data);
+        if (msg && msg.status !== undefined) apply(msg);
+      };
+      ws.onerror = () => { wsOk = false; };
+      ws.onclose = () => { wsOk = wsOk; };
+    } catch (e) {
+      wsOk = false;
+    }
+
+    const poll = async () => {
+      if (wsOk) return;
+      const res = await fetch(`/job/${jobId}/status/`, { credentials: "same-origin" });
+      const data = await res.json();
+      apply(data);
+      if (data.status === "running" || data.status === "queued") {
+        setTimeout(poll, 800);
+      }
+    };
+    setTimeout(poll, 300);
+
+    // Input viewer
+    const inputSelect = document.getElementById("inputSelect");
+    const inputText = document.getElementById("inputText");
+    const loadBtn = document.getElementById("loadInputBtn");
+    const loadInput = async () => {
+      if (!inputSelect || !inputSelect.value) return;
+      const name = encodeURIComponent(inputSelect.value);
+      const res = await fetch(`/job/${jobId}/input/${name}/`, { cache: "no-store", credentials: "same-origin" });
+      const t = await res.text();
+      inputText.textContent = t;
+    };
+    if (loadBtn) loadBtn.addEventListener("click", loadInput);
+    // Prefer default selection to be the script itself.
+    if (inputSelect) {
+      const preferred = "{{ job.uploaded_file.name|escapejs }}";
+      if (preferred) inputSelect.value = preferred;
+    }
+    if (inputSelect && inputSelect.value) loadInput();
+  </script>
+{% endblock %}
+

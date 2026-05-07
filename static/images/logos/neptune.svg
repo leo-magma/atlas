@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Neptune Fixed Income logo">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="45%" r="70%"><stop offset="0%" stop-color="#0f315c"/><stop offset="60%" stop-color="#06101e"/><stop offset="100%" stop-color="#02050a"/></radialGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9bd8ff"/><stop offset=".55" stop-color="#2f81f7"/><stop offset="1" stop-color="#1dd3ff"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="512" height="512" rx="72" fill="url(#bg)"/>
+  <path d="M256 74c-42 42-57 102-38 174 9 37 6 78-26 119 70-27 118-27 189 0-34-42-37-83-26-121 18-70 2-129-39-172z" fill="#040912" opacity=".85"/>
+  <path d="M256 92v260" stroke="url(#blue)" stroke-width="17" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M168 142c30 32 62 32 88-5 26 37 58 37 88 5M164 142v44M348 142v44" fill="none" stroke="url(#blue)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M118 314c62-54 107-62 150-42 42 20 78 14 126-42" fill="none" stroke="#8cc8ff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
+  <path d="M132 358c63-35 110-35 156-17 38 15 71 7 103-20" fill="none" stroke="#255fae" stroke-width="6" stroke-linecap="round" opacity=".75"/>
+  <text x="256" y="454" text-anchor="middle" font-family="Orbitron,Segoe UI,Arial,sans-serif" font-size="43" font-weight="800" fill="#e8f3ff" letter-spacing="3">NEPTUNE</text>
+</svg>

@@ -105,6 +105,62 @@ s = sharpe rets 252
 
 - Annualized Sharpe ratio \((\mu / \sigma) \sqrt{\text{periods}}\) on a single-column return series. Default `periods=252`.
 
+## summary
+
+```text
+s = summary rets
+```
+
+- Basic distribution diagnostics for a single return series: `n`, `mean`, `std`, `skew`, `kurt`, `min`, `p05`, `p50`, `p95`, `max`.
+- Use this before `var` / `es` to sanity-check scale, skewness, and tails.
+
+## jb
+
+```text
+j = jb rets
+```
+
+- Jarque–Bera normality test on a single series.
+- Returns `jb` statistic and `pvalue`.
+
+## drawdown
+
+```text
+dd = drawdown rets
+```
+
+- Drawdown series computed from cumulative wealth \(\prod_t (1 + r_t)\).
+- Returns a single-column frame named `drawdown`.
+
+## maxdd
+
+```text
+m = maxdd rets
+```
+
+- Minimum of the `drawdown` series (most negative drawdown).
+
+## lincomb
+
+```text
+port = lincomb wide weights=0.6,0.4
+```
+
+- Linear combination of columns in a **wide** return matrix (e.g., output of `bind`).
+- `weights=` is a comma-separated list; its length must match the number of columns.
+- Result is a single-column frame named `portfolio`.
+
+## var_backtest
+
+```text
+v = var port level=0.95
+bt = var_backtest port var=v level=0.95
+```
+
+- Simple exceedance diagnostics for a VaR threshold.
+- Convention: VaR is the left-tail quantile (typically negative). An exceedance is \(r_t \le \mathrm{VaR}\).
+- Returns `n`, `exceed`, `rate`, `expected` (expected is \(1-\text{level}\)).
+
 ## print
 
 ```text

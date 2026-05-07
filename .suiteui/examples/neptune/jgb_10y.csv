@@ -1,0 +1,2 @@
+isin,ticker,name,coupon,issue_date,maturity,frequency,face_value,price,currency
+JP1100001A39,JGB10Y,Japan Government Bond 10Y,0.005,2024-01-20,2034-01-20,2,100,98.52,JPY

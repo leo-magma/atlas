@@ -17,7 +17,10 @@ from .yield_curve import YieldCurve
 def _target_dirty_price(bond: Bond) -> float:
     if bond.price is None:
         raise NeptuneRuntimeError("Bond.price is required for this operation")
-    return float(bond.price)
+    price = float(bond.price)
+    if price <= 0 or not math.isfinite(price):
+        raise NeptuneRuntimeError("Bond.price must be a positive finite number")
+    return price
 
 
 def npv_continuous(cf: list[float], times: np.ndarray, rates: np.ndarray) -> float:
@@ -51,7 +54,12 @@ def ytm_from_price(bond: Bond, valuation: date) -> float:
     def f(y: float) -> float:
         return npv_flat_ytm(cf, t, y) - target
 
-    return float(brentq(f, -0.5, 0.5, maxiter=200))
+    try:
+        return float(brentq(f, -1.0, 1.0, maxiter=200))
+    except ValueError as exc:
+        raise NeptuneRuntimeError(
+            "Could not solve yield: price is inconsistent with cashflows or outside the solver bracket"
+        ) from exc
 
 
 def macaulay_duration(bond: Bond, valuation: date, ytm: float) -> float:
@@ -103,4 +111,9 @@ def z_spread(bond: Bond, curve: YieldCurve, valuation: date) -> float:
         rates = base + z
         return npv_continuous(cf, t, rates) - target
 
-    return float(brentq(g, -0.05, 0.05, maxiter=200))
+    try:
+        return float(brentq(g, -0.20, 0.20, maxiter=200))
+    except ValueError as exc:
+        raise NeptuneRuntimeError(
+            "Could not solve z-spread: price is inconsistent with the curve or outside the solver bracket"
+        ) from exc

@@ -152,8 +152,13 @@ def cmd_predict(
     feat = _lookup(env, args[0])
     if not isinstance(feat, pd.DataFrame):
         raise AthenaRuntimeError("predict expects a DataFrame")
-    pred = model.predict_frame(feat)
-    return pd.Series(pred, index=feat.index, name="pred")
+    clean = feat.replace([np.inf, -np.inf], np.nan)
+    mask = clean[model.feature_columns].notna().all(axis=1)
+    clean = clean.loc[mask]
+    if clean.empty:
+        raise AthenaRuntimeError("predict has no complete feature rows")
+    pred = model.predict_frame(clean)
+    return pd.Series(pred, index=clean.index, name="pred")
 
 
 def _metric_rmse(y: np.ndarray, p: np.ndarray) -> float:
@@ -217,8 +222,18 @@ def cmd_evaluate(
     metrics_spec = kwargs.get("metrics", "rmse")
     metrics = [m.strip() for m in metrics_spec.replace("[", "").replace("]", "").split(",")]
 
-    y = feat[target].replace([np.inf, -np.inf], np.nan).ffill().fillna(0.0).to_numpy()
-    p = model.predict_frame(feat)
+    target_shift = int(model.extra.get("target_shift", 0))
+    y = feat[target].replace([np.inf, -np.inf], np.nan)
+    eval_feat = feat.copy()
+    if target_shift > 0:
+        y = y.shift(-target_shift).iloc[:-target_shift]
+        eval_feat = eval_feat.iloc[:-target_shift].copy()
+    aligned = pd.concat([eval_feat[model.feature_columns], y.rename(target)], axis=1).dropna()
+    if aligned.empty:
+        raise AthenaRuntimeError("evaluate has no complete rows after target alignment and missing-value removal")
+    eval_feat = eval_feat.loc[aligned.index]
+    y = aligned[target].to_numpy()
+    p = model.predict_frame(eval_feat)
     scores: dict[str, float] = {}
     for m in metrics:
         key = m.lower()
@@ -300,7 +315,7 @@ def cmd_backtest(
         )
 
         # Align test slice with target_shift.
-        y = test_df[target].replace([np.inf, -np.inf], np.nan).ffill().fillna(0.0)
+        y = test_df[target].replace([np.inf, -np.inf], np.nan)
         if target_shift < 0:
             raise AthenaRuntimeError("backtest target_shift must be >= 0")
         if target_shift > 0:
@@ -309,8 +324,12 @@ def cmd_backtest(
         else:
             test_eval = test_df
 
+        aligned = pd.concat([test_eval[tm.feature_columns], y.rename(target)], axis=1).dropna()
+        if aligned.empty:
+            continue
+        test_eval = test_eval.loc[aligned.index]
         p = tm.predict_frame(test_eval)
-        yy = y.to_numpy()
+        yy = aligned[target].to_numpy()
 
         scores: dict[str, float] = {}
         for m in metrics:

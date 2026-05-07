@@ -1,0 +1,7 @@
+# Neptune-style inputs as CSVs; risk columns must exist on the frame (v0)
+curve = load_curve "bond_demo_curve.csv"
+bond = load_bond "bond_demo_bond.csv"
+feat = features bond methods=duration,convexity,diff
+model = train feat target=spread algo=rf
+pred = predict model feat
+print pred

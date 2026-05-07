@@ -8,6 +8,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from athena.errors import AthenaRuntimeError
+
 
 @dataclass
 class TrainedModel:
@@ -21,11 +23,16 @@ class TrainedModel:
     extra: dict[str, Any] = field(default_factory=dict)
 
     def predict_frame(self, df: pd.DataFrame) -> np.ndarray:
-        Xdf = df[self.feature_columns].replace([np.inf, -np.inf], np.nan).fillna(0.0)
+        missing = [c for c in self.feature_columns if c not in df.columns]
+        if missing:
+            raise AthenaRuntimeError(f"predict missing feature columns: {missing}")
+        Xdf = df[self.feature_columns].replace([np.inf, -np.inf], np.nan)
+        if Xdf.isna().any().any():
+            raise AthenaRuntimeError("predict requires complete feature rows; clean or drop missing values first")
         if not hasattr(self.estimator, "predict"):
             raise TypeError("Estimator has no predict")
         kind = self.extra.get("kind")
-        if kind == "garch":
+        if kind == "garch_proxy":
             return np.asarray(self.estimator.predict(Xdf))
         return np.asarray(self.estimator.predict(Xdf.to_numpy()))
 

@@ -159,6 +159,94 @@ def cmd_sharpe(
     return stats.sharpe_ratio(df, args, kwargs)
 
 
+def cmd_summary(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    df = as_dataframe(_lookup(env, arg or ""))
+    return stats.summary(df)
+
+
+def cmd_jb(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    df = as_dataframe(_lookup(env, arg or ""))
+    return stats.jb_test(df)
+
+
+def cmd_drawdown(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    df = as_dataframe(_lookup(env, arg or ""))
+    return stats.drawdown(df)
+
+
+def cmd_maxdd(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    df = as_dataframe(_lookup(env, arg or ""))
+    return stats.max_drawdown(df)
+
+
+def _parse_weights(spec: str) -> list[float]:
+    raw = spec.strip().strip('"').strip("'")
+    raw = raw.replace("[", "").replace("]", "")
+    parts = [p.strip() for p in raw.split(",") if p.strip()]
+    return [float(p) for p in parts]
+
+
+def cmd_lincomb(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    if not arg:
+        raise AtlasRuntimeError("lincomb requires a wide DataFrame variable")
+    df = as_dataframe(_lookup(env, arg))
+    wspec = kwargs.get("weights")
+    if not wspec:
+        raise AtlasRuntimeError("lincomb requires weights=0.6,0.4,...")
+    w = _parse_weights(wspec)
+    return stats.lincomb(df, w)
+
+
+def cmd_var_backtest(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    if not arg:
+        raise AtlasRuntimeError("var_backtest requires a returns frame variable")
+    df = as_dataframe(_lookup(env, arg))
+    vname = kwargs.get("var")
+    if not vname:
+        raise AtlasRuntimeError("var_backtest requires var=VAR_SERIES")
+    v = _lookup(env, vname)
+    if not isinstance(v, pd.Series) or len(v) < 1:
+        raise AtlasRuntimeError("var_backtest var= must be a non-empty Series (result of var)")
+    level = float(kwargs.get("level", "0.95"))
+    return stats.var_backtest(df, v, level=level)
+
+
 def cmd_print(
     arg: str | None,
     args: list[str],
@@ -196,6 +284,12 @@ def get_command_table() -> dict[str, CommandFn]:
         "cov": cmd_cov,
         "beta": cmd_beta,
         "sharpe": cmd_sharpe,
+        "summary": cmd_summary,
+        "jb": cmd_jb,
+        "drawdown": cmd_drawdown,
+        "maxdd": cmd_maxdd,
+        "lincomb": cmd_lincomb,
+        "var_backtest": cmd_var_backtest,
         "print": cmd_print,
     }
 

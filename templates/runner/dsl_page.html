@@ -1,0 +1,116 @@
+{% extends "runner/base.html" %}
+{% block content %}
+  <header class="header">
+    <div>
+      <h1 class="h1">{{ dsl|capfirst }} Runner</h1>
+      <div class="sub">Upload a script and run it. Progress is line-based for now.</div>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2 class="h2">Run a script</h2>
+    <form method="post" enctype="multipart/form-data" class="form">
+      {% csrf_token %}
+      <div class="row">
+        <div class="field">
+          <label>DSL</label>
+          {{ form.dsl }}
+        </div>
+        <div class="field grow">
+          <label>Script file</label>
+          {{ form.uploaded_file }}
+        </div>
+        <div class="field grow">
+          <label>Data files (optional)</label>
+          {{ form.extra_files }}
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn">Run</button>
+        </div>
+      </div>
+      {% if form.errors %}
+        <pre class="error">{{ form.errors }}</pre>
+      {% endif %}
+    </form>
+  </section>
+
+  <section class="grid">
+    <div class="card">
+      <h2 class="h2">Recent jobs</h2>
+      <form class="row" method="get" style="margin-top:10px">
+        <div class="field grow">
+          <label>Search</label>
+          <input name="q" value="{{ q }}" placeholder="filter by filename…" />
+        </div>
+        <div class="field">
+          <label>&nbsp;</label>
+          <button class="btn secondary">Apply</button>
+        </div>
+      </form>
+      <div class="table">
+        <div class="table-head">
+          <div>ID</div><div>File</div><div>Status</div><div>Progress</div><div>Created</div><div></div>
+        </div>
+        {% for j in jobs %}
+          <div class="table-row" data-job-id="{{ j.id }}">
+            <div>#{{ j.id }}</div>
+            <div class="mono small">{{ j.uploaded_file.name }}</div>
+            <div><span class="pill {{ j.status }}" data-field="status">{{ j.status }}</span></div>
+            <div class="mono" data-field="progress">{{ j.progress }}%</div>
+            <div class="muted">{{ j.created_at }}</div>
+            <div><a class="link" href="{% url 'job_detail' job_id=j.id %}">Open</a></div>
+          </div>
+        {% empty %}
+          <div class="muted">No jobs yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="h2">Examples (local)</h2>
+      <div class="muted">Run examples with one click (copied to MEDIA_ROOT for execution).</div>
+      <div class="examples">
+        {% for ex in example_files %}
+          <div class="example-item">
+            <div class="row" style="align-items:center">
+              <div class="mono grow">{{ ex.name }}</div>
+              <form method="post" action="{% url 'run_example' dsl=dsl %}">
+                {% csrf_token %}
+                <input type="hidden" name="name" value="{{ ex.name }}" />
+                <button type="submit" class="btn secondary">Run</button>
+              </form>
+            </div>
+            <div class="muted small">{{ ex.path }}</div>
+          </div>
+        {% empty %}
+          <div class="muted">No examples found.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Lightweight live refresh for the job list (status/progress).
+    const rows = Array.from(document.querySelectorAll("[data-job-id]"));
+    const tick = async () => {
+      await Promise.all(rows.map(async (row) => {
+        const id = row.getAttribute("data-job-id");
+        try {
+          const res = await fetch(`/job/${id}/status/`, { cache: "no-store", credentials: "same-origin" });
+          const data = await res.json();
+          const st = row.querySelector('[data-field="status"]');
+          const pr = row.querySelector('[data-field="progress"]');
+          if (st) {
+            st.textContent = data.status;
+            st.className = `pill ${data.status}`;
+          }
+          if (pr) pr.textContent = `${data.progress}%`;
+        } catch (e) {}
+      }));
+      setTimeout(tick, 700);
+    };
+    setTimeout(tick, 700);
+  </script>
+{% endblock %}
+

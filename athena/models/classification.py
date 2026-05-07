@@ -13,6 +13,9 @@ def fit_logistic(X: pd.DataFrame, y: pd.Series, random_state: int = 0):
     except ImportError as e:
         raise AthenaRuntimeError("algo requires scikit-learn: pip install scikit-learn") from e
 
+    aligned = pd.concat([X, y.rename("target")], axis=1).dropna()
+    if aligned.empty:
+        raise AthenaRuntimeError("logistic requires complete feature and target rows")
     clf = LogisticRegression(max_iter=2000, random_state=random_state)
-    clf.fit(X.fillna(0.0).to_numpy(), y.astype(int).to_numpy())
+    clf.fit(aligned[X.columns].to_numpy(), aligned["target"].astype(int).to_numpy())
     return clf

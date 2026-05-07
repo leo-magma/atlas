@@ -44,6 +44,7 @@ print var95
 - [Design](design.md)
 - [Roadmap](roadmap.md)
 - [Athena DSL](athena-dsl.md) — ML pipeline (`.ath`)
+- [Atlas long-form spec (10k-word set)](atlas/INDEX.md)
 
 ## License
 

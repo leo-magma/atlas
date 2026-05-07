@@ -1,0 +1,9 @@
+# Diagnostics: summary stats + normality check (Jarque–Bera)
+prices = load "prices.csv"
+close = select prices column=close
+rets = returns close log
+sum = summary rets
+jb = jb rets
+print sum
+print jb
+

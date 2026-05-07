@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Chronos Time Series logo">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="43%" r="70%"><stop offset="0%" stop-color="#102b55"/><stop offset="57%" stop-color="#07101f"/><stop offset="100%" stop-color="#02050a"/></radialGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b2e6ff"/><stop offset=".5" stop-color="#2f81f7"/><stop offset="1" stop-color="#44d7ff"/></linearGradient>
+    <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="512" height="512" rx="72" fill="url(#bg)"/>
+  <path d="M256 75c62 39 96 93 96 160s-34 121-96 160c-62-39-96-93-96-160S194 114 256 75z" fill="#040912" opacity=".9"/>
+  <circle cx="256" cy="238" r="119" fill="none" stroke="url(#blue)" stroke-width="15" filter="url(#glow)"/>
+  <path d="M256 132v106l72 42" fill="none" stroke="#e8f3ff" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M149 353c33-48 70-72 111-72 43 0 66 27 103 11" fill="none" stroke="#8cc8ff" stroke-width="8" stroke-linecap="round" opacity=".85"/>
+  <path d="M133 207c24-11 49-17 74-18M305 187c31 4 57 14 78 30" stroke="#255fae" stroke-width="7" stroke-linecap="round" opacity=".8"/>
+  <text x="256" y="454" text-anchor="middle" font-family="Orbitron,Segoe UI,Arial,sans-serif" font-size="43" font-weight="800" fill="#e8f3ff" letter-spacing="3">CHRONOS</text>
+</svg>

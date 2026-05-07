@@ -13,6 +13,9 @@ def fit_isolation_forest(X: pd.DataFrame, random_state: int = 0):
     except ImportError as e:
         raise AthenaRuntimeError("algo requires scikit-learn: pip install scikit-learn") from e
 
+    clean = X.replace([pd.NA], pd.NA).dropna()
+    if clean.empty:
+        raise AthenaRuntimeError("isolation_forest requires complete numeric feature rows")
     iso = IsolationForest(random_state=random_state, contamination="auto")
-    iso.fit(X.replace([pd.NA], 0.0).fillna(0.0).to_numpy())
+    iso.fit(clean.to_numpy())
     return iso

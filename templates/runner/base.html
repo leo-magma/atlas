@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Atlas Suite UI</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body class="app">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-title">Atlas Suite</div>
+          <div class="brand-sub">Runner UI (Django)</div>
+        </div>
+
+        <nav class="nav">
+          <a class="nav-item {% if active_tab == 'overview' %}active{% endif %}" href="{% url 'overview' %}">
+            <span class="dot overview-dot"></span>
+            <span class="label">Overview</span>
+          </a>
+          {% for k in dsl_order %}
+          <a class="nav-item {% if k == dsl or k == job.dsl %}active{% endif %}" href="{% url 'dsl_page' dsl=k %}">
+            <span class="dot"></span>
+            <span class="label">
+              {% if k == "atlas" %}Equity
+              {% elif k == "hydra" %}Derivatives
+              {% elif k == "neptune" %}Fixed Income
+              {% elif k == "chronos" %}Time Series
+              {% elif k == "athena" %}Machine Learning
+              {% else %}{{ k|capfirst }}
+              {% endif %}
+            </span>
+          </a>
+          {% endfor %}
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="sidebar-logo-stage">
+            <img
+              class="sidebar-logo"
+              src="/static/images/logos/{% if active_tab == 'overview' %}overview{% elif dsl %}{{ dsl }}{% else %}{{ job.dsl }}{% endif %}.svg"
+              alt="{% if active_tab == 'overview' %}Overview mythic background{% elif dsl %}{{ dsl|capfirst }}{% else %}{{ job.dsl|capfirst }}{% endif %}"
+            />
+          </div>
+          <div class="muted">Dark UI + blue accents</div>
+        </div>
+      </aside>
+
+      <main class="main">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </body>
+</html>
+

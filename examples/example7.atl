@@ -1,0 +1,20 @@
+# Parametric vs historical risk + diagnostics
+prices = load "prices.csv"
+close = select prices column=close
+rets = returns close log
+
+sum = summary rets
+jb = jb rets
+
+v_hist = var rets level=0.99 method=historical
+e_hist = es rets level=0.99 method=historical
+v_norm = var rets level=0.99 method=parametric
+e_norm = es rets level=0.99 method=parametric
+
+print sum
+print jb
+print v_hist
+print e_hist
+print v_norm
+print e_norm
+

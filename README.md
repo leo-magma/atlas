@@ -23,6 +23,35 @@ pip install -e ".[dev]"
 atlas run examples/example1.atl
 ```
 
+## Suite UI (Django)
+
+On Windows, start the UI with:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start_ui.ps1
+```
+
+Then open `http://127.0.0.1:8000/`.
+
+## One-command start (UI + optional worker)
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start_all.ps1
+```
+
+If you also want Celery async execution, set:
+
+```powershell
+$env:SUITEUI_ASYNC="1"
+powershell -ExecutionPolicy Bypass -File scripts\start_all.ps1
+```
+
+If you want background job execution via Celery, start Redis and then run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\start_worker.ps1
+```
+
 If `atlas` is not on your `PATH` (often the case on Windows), run:
 
 ```bash

@@ -18,5 +18,8 @@ def load_csv(path: str, base_dir: str | None, date_column: str | None = None) ->
     col = date_column or ("date" if "date" in df.columns else None)
     if col and col in df.columns:
         df[col] = pd.to_datetime(df[col], errors="coerce")
+        bad = int(df[col].isna().sum())
+        if bad:
+            raise ChronosRuntimeError(f"Invalid datetime values in {col!r}: {bad} rows could not be parsed")
         df = df.set_index(col).sort_index()
     return df

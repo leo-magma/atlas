@@ -1,0 +1,14 @@
+# Portfolio example: build wide returns, linear-combine with weights, then VaR backtest
+prices = load "prices_wide.csv"
+ca = select prices column=close_a
+cb = select prices column=close_b
+ra = returns ca log
+rb = returns cb log
+wide = bind ra rb
+
+port = lincomb wide weights=0.6,0.4
+v = var port level=0.95 method=historical
+bt = var_backtest port var=v level=0.95
+print v
+print bt
+

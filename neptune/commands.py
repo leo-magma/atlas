@@ -41,6 +41,8 @@ def cmd_load_bond(
         raise NeptuneRuntimeError("load_bond requires a path")
     path = resolve_path(arg.strip('"').strip("'"), base_dir)
     df = pd.read_csv(path)
+    if df.empty:
+        raise NeptuneRuntimeError("Bond CSV is empty")
     return Bond.from_csv_row(df.iloc[0])
 
 
