@@ -25,6 +25,7 @@ dev = [
 ]
 
 ui = [
+    "dash>=2.17",
     "django>=5.0",
     "celery>=5.3",
     "redis>=5.0",
@@ -40,7 +41,7 @@ chronos = "chronos.cli:main"
 athena = "athena.cli:main"
 
 [tool.setuptools.packages.find]
-include = ["atlas*", "neptune*", "hydra*", "chronos*", "athena*", "cli*", "suiteui*", "runner*"]
+include = ["atlas*", "neptune*", "hydra*", "chronos*", "athena*", "cli*", "suiteui*", "runner*", "dashui*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -17,6 +17,13 @@ def test_log_returns_reject_non_positive_levels():
         stats.compute_returns(df, ["log"], {})
 
 
+def test_var_validation_metrics_scalar_var():
+    returns = pd.DataFrame({"r": [-0.03, -0.01, 0.02, -0.04]})
+    out = stats.var_validation_metrics(returns, -0.02, 0.95, ["hit_ratio", "kupiec_p"])
+    assert out["hit_ratio"] == pytest.approx(0.5)
+    assert 0.0 <= out["kupiec_p"] <= 1.0
+
+
 def test_var_backtest_aligns_indexed_var_series():
     returns = pd.DataFrame({"r": [-0.03, -0.01, -0.04]}, index=pd.date_range("2024-01-01", periods=3))
     var = pd.Series([-0.02, -0.02], index=returns.index[1:])

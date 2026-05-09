@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-from scipy.stats import jarque_bera, norm
+from scipy.stats import binomtest, jarque_bera, norm
 
 from ..errors import AtlasRuntimeError
 
@@ -350,3 +350,83 @@ def var_backtest(returns: pd.DataFrame, var_value: float | pd.Series, level: flo
             "expected": float(expected),
         }
     )
+
+
+def rolling_historical_var_series(s: pd.Series, window: int, level: float) -> pd.Series:
+    """Rolling left-tail VaR (quantile) using the previous ``window`` observations."""
+    if window < 2:
+        raise AtlasRuntimeError("rolling window must be at least 2")
+    if not 0.0 < float(level) < 1.0:
+        raise AtlasRuntimeError("level must be strictly between 0 and 1")
+    q = 1.0 - float(level)
+    return s.rolling(int(window)).quantile(q)
+
+
+def rolling_parametric_var_series(s: pd.Series, window: int, level: float) -> pd.Series:
+    """Gaussian VaR series using rolling mean / sample std (previous ``window`` rows)."""
+    if window < 2:
+        raise AtlasRuntimeError("rolling window must be at least 2")
+    if not 0.0 < float(level) < 1.0:
+        raise AtlasRuntimeError("level must be strictly between 0 and 1")
+    tau = 1.0 - float(level)
+    mu = s.rolling(int(window)).mean()
+    sigma = s.rolling(int(window)).std(ddof=1)
+    out = mu + sigma * float(norm.ppf(tau))
+    return out
+
+
+def var_validation_metrics(
+    returns: pd.DataFrame,
+    var_value: float | pd.Series,
+    level: float,
+    metrics: list[str],
+) -> pd.Series:
+    """Backtesting metrics for VaR: hit ratio, Kupiec p-value (exact binomial), avg exceedance depth."""
+    if not metrics:
+        raise AtlasRuntimeError("validation requires at least one metric")
+    if not 0.0 < float(level) < 1.0:
+        raise AtlasRuntimeError("level must be strictly between 0 and 1")
+    unknown = [m for m in metrics if m not in ("hit_ratio", "kupiec_p", "avg_exceed")]
+    if unknown:
+        raise AtlasRuntimeError(f"Unknown validation metric(s): {unknown}")
+
+    s = _series_from_frame(returns).astype(float).dropna()
+    if len(s) == 0:
+        out: dict[str, float] = {}
+        for m in metrics:
+            out[m] = float("nan")
+        return pd.Series(out)
+
+    if isinstance(var_value, pd.Series) and len(var_value) > 1:
+        v = var_value.astype(float)
+        joined = pd.concat([s.rename("returns"), v.rename("var")], axis=1, join="inner").dropna()
+        if joined.empty:
+            raise AtlasRuntimeError("validation: returns and VaR series have no overlapping index")
+        hit = (joined["returns"] <= joined["var"]).astype(int)
+        r = joined["returns"]
+        vj = joined["var"]
+    else:
+        v_scalar = float(var_value.iloc[0]) if isinstance(var_value, pd.Series) else float(var_value)
+        hit = (s <= v_scalar).astype(int)
+        r = s
+        vj = pd.Series(v_scalar, index=s.index)
+
+    n = int(len(hit))
+    x = int(hit.sum())
+    p0 = 1.0 - float(level)
+    out_map: dict[str, float] = {}
+    for m in metrics:
+        if m == "hit_ratio":
+            out_map[m] = float(x / n) if n else float("nan")
+        elif m == "kupiec_p":
+            if n == 0:
+                out_map[m] = float("nan")
+            else:
+                out_map[m] = float(binomtest(x, n, p=p0, alternative="two-sided").pvalue)
+        else:  # avg_exceed
+            viol = hit.astype(bool)
+            if viol.any():
+                out_map[m] = float((r[viol] - vj[viol]).mean())
+            else:
+                out_map[m] = float("nan")
+    return pd.Series(out_map)

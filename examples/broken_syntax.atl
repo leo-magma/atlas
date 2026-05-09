@@ -1,0 +1,7 @@
+# Intentional broken Atlas script for UI edit/rerun testing.
+# Run this from the UI, open the job, fix the bad line, then Save & rerun.
+prices = load "prices.csv"
+close = select prices column=close
+rets = returns close method=log
+bad_line = var rets level="0.95 method=historical
+print bad_line

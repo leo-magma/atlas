@@ -1,40 +1,19 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Atlas Suite mythic overview background">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Atlas overview mythic background">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="38%" r="76%">
-      <stop offset="0%" stop-color="#173a72"/>
-      <stop offset="46%" stop-color="#08182c"/>
-      <stop offset="100%" stop-color="#02050a"/>
-    </radialGradient>
-    <linearGradient id="blue" x1="12%" y1="10%" x2="88%" y2="90%">
-      <stop offset="0%" stop-color="#d9f4ff"/>
-      <stop offset="42%" stop-color="#2f81f7"/>
-      <stop offset="100%" stop-color="#6a5cff"/>
-    </linearGradient>
-    <linearGradient id="mist" x1="10%" y1="76%" x2="88%" y2="24%">
-      <stop offset="0%" stop-color="#53d8ff"/>
-      <stop offset="50%" stop-color="#2f81f7"/>
-      <stop offset="100%" stop-color="#b4f1ff"/>
-    </linearGradient>
-    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="5" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="deepShadow" x="-35%" y="-35%" width="170%" height="170%">
-      <feDropShadow dx="0" dy="16" stdDeviation="16" flood-color="#000814" flood-opacity=".92"/>
-    </filter>
+    <radialGradient id="bg" cx="50%" cy="36%" r="78%"><stop offset="0%" stop-color="#1a4b86"/><stop offset="46%" stop-color="#07182d"/><stop offset="100%" stop-color="#01040a"/></radialGradient>
+    <linearGradient id="edge" x1="15%" y1="8%" x2="85%" y2="92%"><stop stop-color="#e7fbff"/><stop offset=".46" stop-color="#46a4ff"/><stop offset="1" stop-color="#776fff"/></linearGradient>
+    <linearGradient id="mist" x1="14%" y1="78%" x2="86%" y2="24%"><stop stop-color="#55d9ff"/><stop offset=".52" stop-color="#2f81f7"/><stop offset="1" stop-color="#e7fbff"/></linearGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="4.7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="shadow" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000814" flood-opacity=".95"/></filter>
   </defs>
-  <rect width="512" height="512" rx="82" fill="url(#bg)"/>
-  <circle cx="256" cy="218" r="154" fill="none" stroke="#1d4f96" stroke-width="2" opacity=".48"/>
-  <circle cx="256" cy="218" r="108" fill="none" stroke="#2f81f7" stroke-width="1.5" opacity=".28"/>
-  <path d="M88 310c42-38 64-88 68-150 37 31 66 73 86 125-43 2-94 10-154 25z" fill="#020812" opacity=".92" filter="url(#deepShadow)"/>
-  <path d="M424 310c-42-38-64-88-68-150-37 31-66 73-86 125 43 2 94 10 154 25z" fill="#020812" opacity=".92" filter="url(#deepShadow)"/>
-  <path d="M256 82c-57 43-87 97-89 162-1 45-20 83-56 115 66-13 114-8 145 17 31-25 79-30 145-17-36-32-55-70-56-115-2-65-32-119-89-162z" fill="#030914" opacity=".95" filter="url(#deepShadow)"/>
-  <path d="M164 288c35-20 65-53 92-98 27 45 57 78 92 98" fill="none" stroke="url(#blue)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
-  <path d="M134 352c45-40 86-60 122-60s77 20 122 60" fill="none" stroke="url(#mist)" stroke-width="9" stroke-linecap="round" filter="url(#glow)" opacity=".92"/>
-  <path d="M108 238c30-11 59-10 88 3M316 241c29-13 58-14 88-3" fill="none" stroke="#8cc8ff" stroke-width="7" stroke-linecap="round" opacity=".74"/>
-  <circle cx="256" cy="190" r="12" fill="#d9f4ff" filter="url(#glow)"/>
-  <circle cx="194" cy="242" r="8" fill="#d9f4ff" filter="url(#glow)" opacity=".88"/>
-  <circle cx="318" cy="242" r="8" fill="#d9f4ff" filter="url(#glow)" opacity=".88"/>
-  <text x="256" y="432" text-anchor="middle" font-family="Orbitron,Segoe UI,Arial,sans-serif" font-size="48" font-weight="850" fill="#e8f3ff" letter-spacing="7" filter="url(#glow)">FSDL</text>
-  <path d="M190 449h132" stroke="#2f81f7" stroke-width="3" stroke-linecap="round" opacity=".72"/>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <circle cx="256" cy="222" r="154" fill="none" stroke="#55d9ff" stroke-width="1.4" opacity=".32"/>
+  <circle cx="256" cy="222" r="108" fill="none" stroke="#2f81f7" stroke-width="1" opacity=".28"/>
+  <path d="M78 336c44-39 67-91 71-158 37 28 67 69 90 122-55 4-109 16-161 36zM434 336c-44-39-67-91-71-158-37 28-67 69-90 122 55 4 109 16 161 36z" fill="#020711" opacity=".94" filter="url(#shadow)"/>
+  <path d="M256 74c-66 45-101 104-104 177-2 47-24 87-66 121 74-15 130-8 170 23 40-31 96-38 170-23-42-34-64-74-66-121-3-73-38-132-104-177z" fill="#020711" opacity=".96" filter="url(#shadow)"/>
+  <path d="M154 291c38-23 72-60 102-111 30 51 64 88 102 111" fill="none" stroke="url(#edge)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M126 356c47-42 91-63 130-63s83 21 130 63" fill="none" stroke="url(#mist)" stroke-width="8" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M105 238c30-12 61-11 93 2M314 240c32-13 63-14 93-2" fill="none" stroke="#55d9ff" stroke-width="6" stroke-linecap="round" opacity=".78"/>
+  <circle cx="256" cy="189" r="10" fill="#f1f8ff" filter="url(#glow)"/>
+  <text x="256" y="438" text-anchor="middle" font-family="Orbitron,Segoe UI,Arial,sans-serif" font-size="43" font-weight="850" fill="#f1f8ff" letter-spacing="8" filter="url(#glow)">FSDL</text>
 </svg>

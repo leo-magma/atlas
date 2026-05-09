@@ -1,0 +1,33 @@
+prices = load "prices.csv"
+close  = select prices column=close
+rets   = returns close method=log
+
+model var_hs:
+    type   = "historical_var"
+    level  = 0.99
+    window = 8
+
+model var_parametric:
+    type   = "parametric_var"
+    level  = 0.99
+    dist   = "normal"
+
+validation var_backtest:
+    data    = rets
+    model   = var_hs
+    metric  = ["hit_ratio", "kupiec_p", "avg_exceed"]
+    rolling = 8
+
+validation var_backtest_param:
+    data    = rets
+    model   = var_parametric
+    metric  = ["hit_ratio", "kupiec_p"]
+    rolling = 8
+
+compare var_models:
+    models = [var_hs, var_parametric]
+    metric = ["hit_ratio", "kupiec_p"]
+
+print var_backtest
+print var_backtest_param
+print var_models

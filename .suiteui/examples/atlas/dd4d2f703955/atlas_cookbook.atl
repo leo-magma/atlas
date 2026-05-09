@@ -1,0 +1,179 @@
+# Atlas DSL Cookbook (single-file, runnable)
+#
+# This file is intentionally long and heavily commented.
+# It is meant to be a "try everything" playground you can run end-to-end:
+#
+#   atlas run examples/atlas_cookbook.atl
+#
+# or on Windows:
+#
+#   python -m atlas run examples\atlas_cookbook.atl
+#
+# -----------------------------------------------------------------------------
+# 0) What Atlas is (and what it is not)
+#
+# Atlas is a small, line-oriented DSL designed for *risk scripting* on CSV data.
+# The focus is:
+# - fast iteration
+# - clear, inspectable intermediate tables
+# - familiar quant workflows (returns, rolling vol, VaR/ES, corr/cov, beta, Sharpe)
+#
+# It is not (yet) a full research platform:
+# - no portfolio optimizer
+# - no full-blown backtesting engine
+# - no factor model library
+#
+# The goal of this cookbook is to give you a "hands-on map" of the core verbs and
+# a few higher-signal diagnostics.
+#
+# -----------------------------------------------------------------------------
+# 1) Load prices and compute returns
+#
+# `load` reads CSV via pandas. Relative paths are resolved from this file’s
+# directory (`examples/`), so `prices.csv` works.
+#
+prices = load "prices.csv"
+close = select prices column=close
+rets_simple = returns close simple
+rets_log = returns close log
+#
+# Print objects at any time:
+print rets_simple
+print rets_log
+#
+# -----------------------------------------------------------------------------
+# 2) Rolling volatility
+#
+# The default is a sample standard deviation on the rolling window.
+# Use the positional window form or `window=`.
+#
+vol21 = vol rets_log 21
+vol63 = vol rets_log window=63
+print vol21
+print vol63
+#
+# -----------------------------------------------------------------------------
+# 3) VaR and ES (historical vs parametric Gaussian)
+#
+# Convention:
+# - `level=0.95` means 95% confidence => left-tail mass is 5%
+# - VaR is a left-tail quantile of returns
+# - ES is the mean of returns in the tail (worse than VaR threshold)
+#
+var95_hist = var rets_log level=0.95 method=historical
+es95_hist = es rets_log level=0.95 method=historical
+var99_hist = var rets_log level=0.99 method=historical
+es99_hist = es rets_log level=0.99 method=historical
+#
+var95_norm = var rets_log level=0.95 method=parametric
+es95_norm = es rets_log level=0.95 method=parametric
+var99_norm = var rets_log level=0.99 method=parametric
+es99_norm = es rets_log level=0.99 method=parametric
+#
+print var95_hist
+print es95_hist
+print var99_hist
+print es99_hist
+print var95_norm
+print es95_norm
+print var99_norm
+print es99_norm
+#
+# -----------------------------------------------------------------------------
+# 4) Distribution diagnostics (summary + Jarque–Bera)
+#
+# `summary` gives quick stats you normally eyeball before risk metrics:
+# - scale (mean/std)
+# - tail quantiles (p05/p95)
+# - skew / kurtosis
+#
+# `jb` is Jarque–Bera normality test (useful to remind yourself why
+# parametric Gaussian risk can be optimistic under fat tails).
+#
+sum_log = summary rets_log
+jb_log = jb rets_log
+print sum_log
+print jb_log
+#
+# -----------------------------------------------------------------------------
+# 5) Drawdown and max drawdown (from returns)
+#
+# `drawdown` is computed from cumulative wealth:
+#   wealth_t = Π (1 + r_t)
+#   drawdown_t = wealth_t / max_to_date(wealth) - 1
+#
+# `maxdd` returns the most negative drawdown in the period.
+#
+dd = drawdown rets_log
+mxdd = maxdd rets_log
+print mxdd
+print dd
+#
+# -----------------------------------------------------------------------------
+# 6) Multi-asset workflows: bind, corr, cov, beta
+#
+# Use `prices_wide.csv` which contains two synthetic "close" series.
+# The typical workflow is:
+# - select single columns
+# - compute returns per asset
+# - `bind` to form a wide return matrix
+# - run `cov` / `corr`
+#
+wide_prices = load "prices_wide.csv"
+close_a = select wide_prices column=close_a
+close_b = select wide_prices column=close_b
+ra = returns close_a log
+rb = returns close_b log
+R = bind ra rb
+#
+cm = cov R
+cr = corr R
+print cm
+print cr
+#
+# `beta` expects single-column frames. Here we treat `rb` as "market".
+#
+bet_a_vs_b = beta ra mkt=rb
+print bet_a_vs_b
+#
+# -----------------------------------------------------------------------------
+# 7) Sharpe ratio
+#
+# Annualized Sharpe on returns. Use `periods=` to match your sampling.
+# Daily returns => 252, weekly => 52, monthly => 12.
+#
+sh = sharpe rets_log periods=252
+print sh
+#
+# -----------------------------------------------------------------------------
+# 8) Simple "portfolio" return by linear combination
+#
+# `lincomb` takes a wide return matrix and weights, returning a single series.
+# This is a minimal building block for portfolio risk *without* adding new syntax.
+#
+port = lincomb R weights=0.6,0.4
+print port
+#
+# Then compute risk and a basic exceedance diagnostic.
+#
+v_port = var port level=0.95 method=historical
+bt_port = var_backtest port var=v_port level=0.95
+print v_port
+print bt_port
+#
+# -----------------------------------------------------------------------------
+# 9) Notes on interpretation and next steps
+#
+# - If you get surprising VaR signs: remember VaR here is a return quantile.
+#   For log returns, you expect negative VaR for losses at typical levels.
+# - If you want "positive loss" conventions, you can transform downstream
+#   (e.g., multiply by -1) — that can be added as a new command later if needed.
+#
+# Recommended habits when scripting risk:
+# - Always print `summary` for the return series you use.
+# - Compare historical vs parametric. If they diverge materially, inspect tails.
+# - For multi-asset workflows, check both `corr` and `cov` and ensure data alignment.
+# - Use drawdown diagnostics for sanity even if your risk metric is VaR/ES.
+#
+# End of cookbook.
+

@@ -1,14 +1,13 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-Write-Host "Starting Atlas Suite UI (one command)..." -ForegroundColor Cyan
+Write-Host "Starting Atlas UI (Dash, one command)..." -ForegroundColor Cyan
 
 # Defaults (override by setting env vars before running this script)
 if (-not $env:SUITEUI_ASYNC) { $env:SUITEUI_ASYNC = "0" }
 if (-not $env:SUITEUI_USE_REDIS) { $env:SUITEUI_USE_REDIS = "0" }
 
 python -m pip install -e ".[ui]" | Out-Host
-python manage.py check | Out-Host
 python manage.py migrate | Out-Host
 
 Write-Host ""
@@ -28,5 +27,7 @@ if ($env:SUITEUI_ASYNC -in @("1","true","yes","y")) {
 }
 
 # Bind explicitly so the printed URL matches the one to open.
-python manage.py runserver 127.0.0.1:8000
+$env:DASH_HOST="127.0.0.1"
+$env:DASH_PORT="8000"
+python -m dashui.app
 

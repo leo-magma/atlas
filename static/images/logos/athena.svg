@@ -1,15 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Athena Machine Learning logo">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="44%" r="72%"><stop offset="0%" stop-color="#112b5a"/><stop offset="58%" stop-color="#07101e"/><stop offset="100%" stop-color="#02050a"/></radialGradient>
-    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#c1eeff"/><stop offset=".52" stop-color="#2f81f7"/><stop offset="1" stop-color="#6a5cff"/></linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <radialGradient id="bg" cx="50%" cy="36%" r="78%"><stop offset="0%" stop-color="#1b4b88"/><stop offset="46%" stop-color="#07172e"/><stop offset="100%" stop-color="#01040a"/></radialGradient>
+    <linearGradient id="edge" x1="18%" y1="8%" x2="82%" y2="92%"><stop stop-color="#e7fbff"/><stop offset=".48" stop-color="#46a4ff"/><stop offset="1" stop-color="#7b70ff"/></linearGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="4.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="shadow" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000814" flood-opacity=".95"/></filter>
   </defs>
-  <rect width="512" height="512" rx="72" fill="url(#bg)"/>
-  <path d="M256 80c-58 21-92 67-98 137-4 48-24 88-59 121 55-2 102 9 140 34 37-25 84-36 140-34-35-33-55-73-59-121-6-70-40-116-98-137z" fill="#040912" opacity=".9"/>
-  <path d="M171 222c36-51 64-77 85-77s49 26 85 77M186 285c33-20 56-31 70-31s37 11 70 31" fill="none" stroke="url(#blue)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
-  <path d="M176 197h160M202 326h108" stroke="#8cc8ff" stroke-width="8" stroke-linecap="round" opacity=".86"/>
-  <circle cx="210" cy="224" r="13" fill="#e8f3ff" filter="url(#glow)"/>
-  <circle cx="302" cy="224" r="13" fill="#e8f3ff" filter="url(#glow)"/>
-  <path d="M142 370c39-35 77-52 114-52s75 17 114 52" fill="none" stroke="#255fae" stroke-width="7" stroke-linecap="round" opacity=".85"/>
-  <text x="256" y="454" text-anchor="middle" font-family="Orbitron,Segoe UI,Arial,sans-serif" font-size="47" font-weight="800" fill="#e8f3ff" letter-spacing="4">ATHENA</text>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <path d="M256 72c-65 24-103 76-110 153-4 53-27 96-67 129 66-4 119 10 160 42 41-32 94-46 160-42-40-33-63-76-67-129-7-77-45-129-110-153z" fill="#020711" opacity=".96" filter="url(#shadow)"/>
+  <path d="M158 226c42-58 75-87 98-87s56 29 98 87M181 287c35-20 60-30 75-30s40 10 75 30" fill="none" stroke="url(#edge)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M170 198h172M199 329h114" stroke="#55d9ff" stroke-width="6.5" stroke-linecap="round" opacity=".86" filter="url(#glow)"/>
+  <circle cx="211" cy="225" r="10" fill="#f1f8ff" filter="url(#glow)"/><circle cx="301" cy="225" r="10" fill="#f1f8ff" filter="url(#glow)"/>
+  <path d="M133 371c43-38 84-57 123-57s80 19 123 57" fill="none" stroke="#3b91ff" stroke-width="6" stroke-linecap="round" opacity=".84"/>
+  <text x="256" y="438" text-anchor="middle" font-family="Orbitron,Segoe UI,Arial,sans-serif" font-size="34" font-weight="850" fill="#f1f8ff" letter-spacing="6">ATHENA</text>
 </svg>

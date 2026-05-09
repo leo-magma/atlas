@@ -221,6 +221,9 @@ def _run_job(job_id: int) -> None:
                             },
                         )
 
+            if hasattr(interp, "finalize"):
+                interp.finalize()
+
         RunJob.objects.filter(id=job_id).update(
             status="succeeded",
             finished_at=_now(),

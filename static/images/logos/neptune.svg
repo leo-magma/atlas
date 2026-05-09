@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Neptune Fixed Income logo">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="45%" r="70%"><stop offset="0%" stop-color="#0f315c"/><stop offset="60%" stop-color="#06101e"/><stop offset="100%" stop-color="#02050a"/></radialGradient>
-    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9bd8ff"/><stop offset=".55" stop-color="#2f81f7"/><stop offset="1" stop-color="#1dd3ff"/></linearGradient>
-    <filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <radialGradient id="bg" cx="50%" cy="36%" r="78%"><stop offset="0%" stop-color="#164c82"/><stop offset="46%" stop-color="#06182d"/><stop offset="100%" stop-color="#01040a"/></radialGradient>
+    <linearGradient id="edge" x1="18%" y1="6%" x2="82%" y2="94%"><stop stop-color="#e5fbff"/><stop offset=".45" stop-color="#36a5ff"/><stop offset="1" stop-color="#55d9ff"/></linearGradient>
+    <filter id="glow" x="-35%" y="-35%" width="170%" height="170%"><feGaussianBlur stdDeviation="4.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="shadow" x="-35%" y="-35%" width="170%" height="170%"><feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000814" flood-opacity=".95"/></filter>
   </defs>
-  <rect width="512" height="512" rx="72" fill="url(#bg)"/>
-  <path d="M256 74c-42 42-57 102-38 174 9 37 6 78-26 119 70-27 118-27 189 0-34-42-37-83-26-121 18-70 2-129-39-172z" fill="#040912" opacity=".85"/>
-  <path d="M256 92v260" stroke="url(#blue)" stroke-width="17" stroke-linecap="round" filter="url(#glow)"/>
-  <path d="M168 142c30 32 62 32 88-5 26 37 58 37 88 5M164 142v44M348 142v44" fill="none" stroke="url(#blue)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
-  <path d="M118 314c62-54 107-62 150-42 42 20 78 14 126-42" fill="none" stroke="#8cc8ff" stroke-width="8" stroke-linecap="round" opacity=".9"/>
-  <path d="M132 358c63-35 110-35 156-17 38 15 71 7 103-20" fill="none" stroke="#255fae" stroke-width="6" stroke-linecap="round" opacity=".75"/>
-  <text x="256" y="454" text-anchor="middle" font-family="Orbitron,Segoe UI,Arial,sans-serif" font-size="43" font-weight="800" fill="#e8f3ff" letter-spacing="3">NEPTUNE</text>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <path d="M256 72c-55 44-76 101-61 171 11 52 2 94-32 133 72-27 134-27 206 0-34-39-43-81-32-133 15-70-6-127-61-171z" fill="#020711" opacity=".96" filter="url(#shadow)"/>
+  <path d="M256 95v258" stroke="url(#edge)" stroke-width="13" stroke-linecap="round" filter="url(#glow)"/>
+  <path d="M154 152c37 34 72 33 102-7 30 40 65 41 102 7M154 152v44M358 152v44" fill="none" stroke="url(#edge)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow)"/>
+  <path d="M115 319c48-42 91-60 129-53 36 7 68 37 153-35" fill="none" stroke="#55d9ff" stroke-width="7" stroke-linecap="round" opacity=".88" filter="url(#glow)"/>
+  <path d="M130 361c62-33 110-33 157-14 40 16 73 8 104-22" fill="none" stroke="#2f81f7" stroke-width="5.5" stroke-linecap="round" opacity=".78"/>
+  <text x="256" y="438" text-anchor="middle" font-family="Orbitron,Segoe UI,Arial,sans-serif" font-size="31" font-weight="850" fill="#f1f8ff" letter-spacing="5">NEPTUNE</text>
 </svg>

@@ -1,0 +1,7 @@
+# Example: log returns, rolling vol, historical VaR (95%)
+prices = load "prices.csv"
+close = select prices column=close
+rets = returns close method=log
+vol21 = vol rets window=21
+var95 = var rets level=0.95 method=historical
+print var95

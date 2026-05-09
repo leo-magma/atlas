@@ -1,0 +1,9 @@
+# Chronos sample
+ts = load "prices.csv"
+clean = clean ts dropna=true
+rep = validate clean require_datetime=true require_columns=close numeric_columns=close strict=true
+lag1 = shift clean periods=1
+ret = diff clean column=close
+z = normalize ret method=zscore column=close
+print rep
+print z
