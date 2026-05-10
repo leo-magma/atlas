@@ -1,0 +1,25 @@
+{
+  "name": "Atlas Suite — Quantitative finance DSL console",
+  "short_name": "Atlas Suite",
+  "description": "Desk-grade console for Atlas, Neptune, Hydra, Chronos, and Athena DSLs.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#030711",
+  "theme_color": "#030711",
+  "icons": [
+    {
+      "src": "/assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

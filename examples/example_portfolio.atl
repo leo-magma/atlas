@@ -1,0 +1,15 @@
+# Mean–variance optimization & efficient frontier (wide returns)
+wide = load "prices_wide.csv"
+ra = select wide column=close_a
+rb = select wide column=close_b
+r1 = returns ra method=log
+r2 = returns rb method=log
+bind_rets = bind r1 r2
+
+w_mvp = min_var bind_rets
+w_tan = tangency bind_rets periods=252 rf=0
+front = efficient_frontier bind_rets points=15 periods=252 rf=0
+
+print w_mvp
+print w_tan
+print front

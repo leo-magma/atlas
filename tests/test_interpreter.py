@@ -14,6 +14,7 @@ def test_run_example_scripts():
         "example5.atl",
         "example6.atl",
         "example7.atl",
+        "example_portfolio.atl",
         "example_var_validation.atl",
         "atlas_cookbook.atl",
     ):

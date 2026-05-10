@@ -9,7 +9,7 @@ import pandas as pd
 
 from .errors import AtlasRuntimeError, UnknownFunctionError, UnknownVariableError
 from .runtime import as_dataframe
-from .std import io, stats
+from .std import io, portfolio, stats
 
 Env = dict[str, Any]
 CommandFn = Callable[..., Any]
@@ -247,6 +247,45 @@ def cmd_var_backtest(
     return stats.var_backtest(df, v, level=level)
 
 
+def cmd_min_var(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    if not arg:
+        raise AtlasRuntimeError("min_var requires a wide returns matrix variable")
+    df = as_dataframe(_lookup(env, arg))
+    return portfolio.min_variance_weights(df, kwargs)
+
+
+def cmd_tangency(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    if not arg:
+        raise AtlasRuntimeError("tangency requires a wide returns matrix variable")
+    df = as_dataframe(_lookup(env, arg))
+    return portfolio.tangency_weights(df, kwargs)
+
+
+def cmd_efficient_frontier(
+    arg: str | None,
+    args: list[str],
+    kwargs: dict[str, str],
+    env: Env,
+    base_dir: str | None,
+):
+    if not arg:
+        raise AtlasRuntimeError("efficient_frontier requires a wide returns matrix variable")
+    df = as_dataframe(_lookup(env, arg))
+    return portfolio.efficient_frontier(df, args, kwargs)
+
+
 def cmd_print(
     arg: str | None,
     args: list[str],
@@ -290,6 +329,9 @@ def get_command_table() -> dict[str, CommandFn]:
         "maxdd": cmd_maxdd,
         "lincomb": cmd_lincomb,
         "var_backtest": cmd_var_backtest,
+        "min_var": cmd_min_var,
+        "tangency": cmd_tangency,
+        "efficient_frontier": cmd_efficient_frontier,
         "print": cmd_print,
     }
 

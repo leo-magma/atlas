@@ -23,7 +23,7 @@ from dash import ALL, Dash, Input, Output, State, dcc, html, no_update
 from dash import callback_context as ctx
 from django.conf import settings
 from django.core.management import call_command
-from flask import Response, redirect, send_file, session
+from flask import Response, send_file, session
 
 from runner.forms import (
     EXTRA_EXTENSIONS,
@@ -46,7 +46,7 @@ DSL_LABELS = {
     "athena": "Machine Learning",
 }
 DSL_DESCRIPTIONS = {
-    "atlas": "Risk scripting: returns, volatility, VaR/ES, corr/cov, beta, Sharpe, drawdown, diagnostics.",
+    "atlas": "Risk scripting: returns, volatility, VaR/ES, corr/cov, beta, Sharpe, drawdown, min-var / tangency / efficient frontier.",
     "neptune": "Fixed-income analytics: curve/bond loaders, YTM, duration, convexity, DV01, z-spread.",
     "hydra": "Options analytics: Black-Scholes pricing, Greeks, implied volatility, vol-surface checks.",
     "chronos": "Time-series ETL: load, clean, join, resample, shift, diff, normalize, validation.",
@@ -60,14 +60,14 @@ DESK_LABELS = {
     "athena": "ML Research Workflow",
 }
 CONTROL_LABELS = {
-    "atlas": "VaR / ES / Drawdown / Beta",
+    "atlas": "VaR / ES / Portfolio optimization / Frontier",
     "neptune": "YTM / Duration / DV01 / Z-Spread",
     "hydra": "BS Price / Greeks / Implied Vol",
     "chronos": "Schema / Frequency / Missingness",
     "athena": "Features / Backtest / Reproducibility",
 }
 GOVERNANCE_LABELS = {
-    "atlas": ["Risk metric validation", "Backtest-ready diagnostics", "Input/output audit"],
+    "atlas": ["Risk metric validation", "Mean–variance & frontier checks", "Input/output audit"],
     "neptune": ["Curve consistency", "Solver failure handling", "Sensitivity review"],
     "hydra": ["No-arbitrage checks", "IV solver controls", "Greek exposure review"],
     "chronos": ["Schema validation", "Frequency integrity", "Missingness controls"],
@@ -79,6 +79,10 @@ READINESS_LABELS = [
     ("Auditability", "Inputs, outputs, errors, and timing tracked"),
     ("Operability", "Upload, run, cancel, edit, rerun"),
 ]
+
+# Landing hero: sample YouTube embed — change VIDEO_ID to your clip (e.g. from your channel).
+LANDING_HERO_YOUTUBE_VIDEO_ID = "M7lc1UVf-VE"
+LANDING_HERO_YOUTUBE_PAGE = f"https://www.youtube.com/watch?v={LANDING_HERO_YOUTUBE_VIDEO_ID}"
 
 
 def _ensure_db() -> None:
@@ -408,15 +412,25 @@ def _readiness_panel() -> html.Div:
 def _sidebar(active: str) -> html.Aside:
     logo = active if active in [*DSL_ORDER, "overview"] else "overview"
     items = [
-        html.A(
+        dcc.Link(
+            [html.Span(className="dot overview-dot"), html.Span("Home", className="label")],
+            href="/",
+            className=f"nav-item {'active' if active == 'home' else ''}",
+        ),
+        dcc.Link(
             [html.Span(className="dot overview-dot"), html.Span("Overview", className="label")],
             href="/overview",
             className=f"nav-item {'active' if active == 'overview' else ''}",
-        )
+        ),
+        dcc.Link(
+            [html.Span(className="dot"), html.Span("Architecture", className="label")],
+            href="/platform",
+            className=f"nav-item {'active' if active == 'platform' else ''}",
+        ),
     ]
     for dsl in DSL_ORDER:
         items.append(
-            html.A(
+            dcc.Link(
                 [html.Span(className="dot"), html.Span(DSL_LABELS[dsl], className="label")],
                 href=f"/dsl/{dsl}",
                 className=f"nav-item {'active' if active == dsl else ''}",
@@ -443,6 +457,348 @@ def _sidebar(active: str) -> html.Aside:
 
 def _shell(content: Any, active: str) -> html.Div:
     return html.Div([_sidebar(active), html.Main(content, className="main")], className="layout")
+
+
+def _author_layout() -> html.Div:
+    return html.Div(
+        [
+            html.Header(
+                html.Div(
+                    [
+                        dcc.Link(
+                            [html.Span("Atlas", className="landing-wordmark"), html.Span("Suite", className="landing-wordmark-sub")],
+                            href="/",
+                            className="landing-brand",
+                        ),
+                        html.Nav(
+                            [
+                                dcc.Link("Home", href="/", className="landing-nav-link"),
+                                dcc.Link("Author", href="/author", className="landing-nav-link"),
+                                dcc.Link("Console", href="/overview", className="landing-nav-link"),
+                            ],
+                            className="landing-nav-links",
+                        ),
+                    ],
+                    className="landing-nav-inner",
+                ),
+                className="landing-nav",
+            ),
+            html.Div(
+                [
+                    html.Div(
+                        dcc.Link("← Back to landing", href="/", className="author-back-link"),
+                        className="author-toolbar",
+                    ),
+                    html.Iframe(
+                        src="/assets/author.html",
+                        title="Author profile",
+                        className="author-frame",
+                    ),
+                ],
+                className="author-wrap",
+            ),
+        ],
+        className="author-root",
+    )
+
+
+def _landing_nav() -> html.Header:
+    return html.Header(
+        [
+            html.Div(
+                [
+                    dcc.Link(
+                        [html.Span("Atlas", className="landing-wordmark"), html.Span("Suite", className="landing-wordmark-sub")],
+                        href="/",
+                        className="landing-brand",
+                    ),
+                    html.Nav(
+                        [
+                            dcc.Link("Product", href="/#suite-product", className="landing-nav-link"),
+                            dcc.Link("Architecture", href="/platform", className="landing-nav-link"),
+                            dcc.Link("Console", href="/overview", className="landing-nav-link"),
+                            dcc.Link("Author", href="/author", className="landing-nav-link"),
+                            dcc.Link("Launch runner", href="/dsl/atlas", className="btn landing-nav-cta"),
+                        ],
+                        className="landing-nav-links",
+                    ),
+                ],
+                className="landing-nav-inner",
+            ),
+        ],
+        className="landing-nav",
+    )
+
+
+def _landing_layout() -> html.Div:
+    counts = _job_counts()
+    bento = [
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Img(src=f"/assets/images/logos/{dsl}.svg", className="landing-bento-icon"),
+                        html.Div(
+                            [
+                                html.H3(DESK_LABELS[dsl], className="landing-bento-title"),
+                                html.P(DSL_DESCRIPTIONS[dsl], className="landing-bento-desc"),
+                                html.Div(
+                                    [
+                                        html.Span(SCRIPT_EXTENSIONS[dsl], className="landing-bento-ext"),
+                                        html.Span(f"{counts[dsl]} runs", className="landing-bento-meta"),
+                                    ],
+                                    className="landing-bento-foot",
+                                ),
+                            ],
+                            className="landing-bento-copy",
+                        ),
+                    ],
+                    className="landing-bento-inner",
+                ),
+                dcc.Link("Open desk →", href=f"/dsl/{dsl}", className="landing-bento-link"),
+            ],
+            className="landing-bento-card",
+        )
+        for dsl in DSL_ORDER
+    ]
+    return html.Div(
+        [
+            _landing_nav(),
+            html.Main(
+                [
+                    html.Section(
+                        [
+                            html.Div(
+                                [
+                                    html.Div("Multi-asset quantitative stack", className="landing-eyebrow"),
+                                    html.H1(
+                                        [
+                                            "Risk, pricing, time series, ",
+                                            html.Span("and ML", className="landing-hero-accent"),
+                                            " — in one control plane.",
+                                        ],
+                                        className="landing-hero-title",
+                                    ),
+                                    html.P(
+                                        "Atlas Suite pairs purpose-built DSLs with a desk-grade console: upload scripts, co-locate data, stream progress, audit inputs, edit, and rerun without leaving the browser.",
+                                        className="landing-hero-lead",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Link("Enter console", href="/overview", className="btn landing-hero-primary"),
+                                            dcc.Link("View architecture", href="/platform", className="btn secondary landing-hero-secondary"),
+                                        ],
+                                        className="landing-hero-actions",
+                                    ),
+                                ],
+                                className="landing-hero-copy",
+                            ),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        html.Iframe(
+                                            src=f"https://www.youtube-nocookie.com/embed/{LANDING_HERO_YOUTUBE_VIDEO_ID}?rel=0",
+                                            title="Atlas Suite sample walkthrough",
+                                            className="landing-youtube-iframe",
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen",
+                                        ),
+                                        className="landing-youtube-frame",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.A(
+                                                "Watch on YouTube",
+                                                href=LANDING_HERO_YOUTUBE_PAGE,
+                                                target="_blank",
+                                                rel="noopener noreferrer",
+                                                className="landing-youtube-link",
+                                            ),
+                                            dcc.Link(
+                                                "Authors profile",
+                                                href="/author",
+                                                className="landing-youtube-link",
+                                            ),
+                                        ],
+                                        className="landing-hero-media-links",
+                                    ),
+                                ],
+                                className="landing-hero-media",
+                            ),
+                        ],
+                        className="landing-hero",
+                    ),
+                    html.Section(
+                        [
+                            html.H2("Five desks, one surface", className="landing-section-title"),
+                            html.P(
+                                "Each language targets a capital-markets workstream while sharing upload, manifest, and inspection semantics — closer to a production control plane than a loose script runner.",
+                                className="landing-section-sub",
+                            ),
+                            html.Div(bento, className="landing-bento-grid"),
+                        ],
+                        className="landing-section",
+                        id="suite-product",
+                    ),
+                    html.Section(
+                        [
+                            html.H2("From file to evidence", className="landing-section-title"),
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.Span("01", className="landing-step-num"),
+                                            html.H3("Ingest", className="landing-step-title"),
+                                            html.P("Script plus CSV / JSON / artefacts land in an isolated job directory with a manifest of what the runner actually touched.", className="landing-step-text"),
+                                        ],
+                                        className="landing-step",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Span("02", className="landing-step-num"),
+                                            html.H3("Execute", className="landing-step-title"),
+                                            html.P("Background execution with live progress, cancellation, and stdout captured for desk-style inspection.", className="landing-step-text"),
+                                        ],
+                                        className="landing-step",
+                                    ),
+                                    html.Div(
+                                        [
+                                            html.Span("03", className="landing-step-num"),
+                                            html.H3("Govern", className="landing-step-title"),
+                                            html.P("Inspect only the files used, diff outputs, download logs, edit scripts in-place, and rerun under the same job context.", className="landing-step-text"),
+                                        ],
+                                        className="landing-step",
+                                    ),
+                                ],
+                                className="landing-steps",
+                            ),
+                        ],
+                        className="landing-section muted-band",
+                    ),
+                    html.Section(
+                        [
+                            html.Div(
+                                [
+                                    html.Div(
+                                        [
+                                            html.H2("Ready when you are", className="landing-cta-title"),
+                                            html.P("Jump straight into the Equity desk or open the overview to pick a runtime.", className="landing-cta-sub"),
+                                        ],
+                                        className="landing-cta-copy",
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Link("Open overview", href="/overview", className="btn"),
+                                            dcc.Link("Start with Atlas (.atl)", href="/dsl/atlas", className="btn secondary"),
+                                        ],
+                                        className="landing-cta-actions",
+                                    ),
+                                ],
+                                className="landing-cta-inner",
+                            ),
+                        ],
+                        className="landing-cta",
+                    ),
+                    html.Footer(
+                        [
+                            html.Div(
+                                [
+                                    html.Span("Atlas Suite", className="landing-footer-brand"),
+                                    html.Span(" — local-first DSL runner UI"),
+                                    html.Span(" · "),
+                                    dcc.Link("Console", href="/overview", className="landing-footer-link"),
+                                    html.Span(" · "),
+                                    dcc.Link("Architecture", href="/platform", className="landing-footer-link"),
+                                    html.Span(" · "),
+                                    dcc.Link("Author", href="/author", className="landing-footer-link"),
+                                ],
+                                className="landing-footer-inner",
+                            ),
+                        ],
+                        className="landing-footer",
+                    ),
+                ],
+                className="landing-main",
+            ),
+        ],
+        className="landing-root",
+    )
+
+
+def _platform_layout() -> html.Div:
+    layers = [
+        ("Presentation", "Dash console — routing, upload, job table, detail + editor, downloads."),
+        ("Orchestration", "django-run jobs, optional Celery, session-scoped job IDs, progress persistence."),
+        ("Language plane", "Atlas · Neptune · Hydra · Chronos · Athena — each interpreter + CLI sibling."),
+        ("Data plane", "Per-job media directories, input manifests, static examples, CSV co-upload."),
+    ]
+    content = [
+        html.Header(
+            [
+                html.Div(
+                    [
+                        html.H1("Platform architecture", className="h1"),
+                        html.Div(
+                            "How the Suite UI stacks on the interpreters you already ship — no rewrite of DSL semantics required.",
+                            className="sub",
+                        ),
+                    ]
+                ),
+                html.Div(
+                    [
+                        dcc.Link("← Back to site", href="/", className="btn secondary"),
+                        dcc.Link("Open console", href="/overview", className="btn"),
+                    ],
+                    className="header-actions",
+                ),
+            ],
+            className="header",
+        ),
+        html.Section(
+            [
+                html.Div(
+                    [
+                        html.Div([html.Div("Tier", className="terminal-label"), html.Div("Responsibility", className="terminal-value")], className="terminal-tile wide"),
+                        html.Div([html.Div("Pattern", className="terminal-label"), html.Div("Desk-grade control surface", className="terminal-value")], className="terminal-tile"),
+                    ],
+                    className="terminal-strip",
+                ),
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div(name, className="landing-arch-name"),
+                                html.Div(blurb, className="landing-arch-blurb"),
+                            ],
+                            className="landing-arch-row",
+                        )
+                        for name, blurb in layers
+                    ],
+                    className="landing-arch-stack card",
+                ),
+                html.Div(
+                    [
+                        html.H2("DSL routing", className="h2"),
+                        html.Pre(
+                            "\n".join(
+                                [
+                                    "atlas run   examples/example1.atl",
+                                    "neptune run neptune/examples/example.nep",
+                                    "hydra run   hydra/examples/example.hyd",
+                                    "chronos run chronos/examples/example.chr",
+                                    "athena run  athena/examples/stock_prediction.ath",
+                                ]
+                            ),
+                            className="log mono small",
+                        ),
+                    ],
+                    className="card",
+                    style={"marginTop": "16px"},
+                ),
+            ],
+            className="card",
+        ),
+    ]
+    return _shell(content, "platform")
 
 
 def _overview_layout() -> html.Div:
@@ -802,18 +1158,51 @@ _ensure_db()
 app = Dash(__name__, assets_folder=str(BASE_DIR / "static"), suppress_callback_exceptions=True)
 server = app.server
 server.secret_key = settings.SECRET_KEY
-app.title = "Atlas UI"
+app.title = "Atlas Suite — Quantitative finance DSL console"
 app.index_string = """<!DOCTYPE html>
 <html>
-  <head>{%metas%}<title>{%title%}</title>{%favicon%}{%css%}</head>
-  <body class="app">{%app_entry%}<footer>{%config%}{%scripts%}{%renderer%}</footer></body>
+  <head>{%metas%}
+  <title>{%title%}</title>
+  {%favicon%}
+  <link rel="manifest" href="/manifest.json"/>
+  <meta name="theme-color" content="#030711"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="apple-touch-icon" href="/assets/icons/icon-192.png"/>
+  {%css%}
+  </head>
+  <body class="app">
+  {%app_entry%}
+  <footer>{%config%}{%scripts%}{%renderer%}</footer>
+  <script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () {});
+    });
+  }
+  </script>
+  </body>
 </html>"""
 app.layout = html.Div([dcc.Location(id="url"), html.Div(id="page")])
 
 
-@server.route("/")
-def root_redirect():
-    return redirect("/dsl/atlas")
+@server.route("/manifest.json")
+def pwa_manifest():
+    return send_file(
+        BASE_DIR / "static" / "manifest.json",
+        mimetype="application/manifest+json",
+        max_age=3600,
+    )
+
+
+@server.route("/sw.js")
+def pwa_service_worker():
+    return send_file(
+        BASE_DIR / "static" / "sw.js",
+        mimetype="application/javascript; charset=utf-8",
+        max_age=0,
+        conditional=True,
+    )
 
 
 @server.route("/download/<int:job_id>/<kind>")
@@ -833,7 +1222,13 @@ def download(job_id: int, kind: str):
 
 @app.callback(Output("page", "children"), Input("url", "pathname"), State("url", "search"))
 def render_page(pathname: str | None, search: str | None):
-    path = pathname or "/dsl/atlas"
+    path = pathname or "/"
+    if path in ("/", ""):
+        return _landing_layout()
+    if path == "/platform":
+        return _platform_layout()
+    if path == "/author":
+        return _author_layout()
     if path == "/overview":
         return _overview_layout()
     if path.startswith("/job/"):
@@ -847,7 +1242,7 @@ def render_page(pathname: str | None, search: str | None):
         if search and search.startswith("?q="):
             q = search[3:]
         return _dsl_layout(dsl, q)
-    return _dsl_layout("atlas")
+    return _landing_layout()
 
 
 @app.callback(

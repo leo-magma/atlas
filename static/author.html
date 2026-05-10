@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Ryo Okazaki — finance-native data generalist: index ops, reference data, transfer pricing, CoE DS, DSLs and LLM/RAG." />
+  <title>Ryo Okazaki</title>
+  <style>
+    :root {
+      --bg: #050912;
+      --surface: #0c1424;
+      --border: rgba(47, 107, 192, 0.35);
+      --text: #e8f0ff;
+      --muted: #8fa8cc;
+      --accent: #55d9ff;
+      --accent2: #8b9cff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 15px;
+    }
+    .bg-grid {
+      min-height: 100vh;
+      background-image:
+        linear-gradient(rgba(47, 107, 192, 0.055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(47, 107, 192, 0.055) 1px, transparent 1px);
+      background-size: 40px 40px;
+      background-color: var(--bg);
+    }
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 40px clamp(18px, 4vw, 40px) 56px;
+    }
+    header {
+      margin-bottom: 40px;
+    }
+    .profile-hero {
+      display: grid;
+      grid-template-columns: minmax(240px, 0.44fr) minmax(0, 1fr);
+      gap: clamp(28px, 5vw, 56px);
+      align-items: start;
+    }
+    .profile-photo-col {
+      position: relative;
+      min-width: 0;
+    }
+    .profile-photo-frame {
+      width: 100%;
+      max-width: min(520px, 100%);
+      margin: 0 auto;
+      aspect-ratio: 3 / 4;
+      border-radius: clamp(18px, 3vw, 28px);
+      overflow: hidden;
+      border: 1px solid rgba(85, 217, 255, 0.42);
+      box-shadow:
+        0 24px 64px rgba(0, 0, 0, 0.45),
+        0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+      background: var(--surface);
+    }
+    .profile-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 12%;
+      display: block;
+    }
+    .profile-intro-col {
+      min-width: 0;
+      padding-top: 4px;
+    }
+    .profile-intro-col .eyebrow {
+      margin-bottom: 10px;
+    }
+    .profile-intro-col h1 {
+      margin-bottom: 16px;
+    }
+    .profile-intro-col .lede {
+      max-width: none;
+    }
+    .profile-intro-col .lede + .lede {
+      max-width: none;
+    }
+    @media (max-width: 820px) {
+      .profile-hero {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+      .profile-photo-frame {
+        max-width: min(400px, 88vw);
+        aspect-ratio: 4 / 5;
+      }
+    }
+    .eyebrow {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    h1 {
+      margin: 0 0 14px;
+      font-size: clamp(1.65rem, 4vw, 2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(105deg, #f0f7ff 0%, #8fd4ff 45%, #a8b8ff 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    .lede {
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 1.05rem;
+      line-height: 1.55;
+      max-width: 56ch;
+    }
+    .lede strong {
+      color: #c8ddff;
+      font-weight: 800;
+    }
+    .lede + .lede {
+      margin-top: 14px;
+      margin-bottom: 18px;
+      font-size: 0.97rem;
+      line-height: 1.62;
+      color: #9aaed0;
+      max-width: 60ch;
+    }
+    .pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .pill {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #9fd9ff;
+      border: 1px solid rgba(85, 217, 255, 0.35);
+      border-radius: 999px;
+      padding: 6px 12px;
+      background: rgba(59, 145, 255, 0.08);
+    }
+    section { margin-bottom: 32px; }
+    h2 {
+      margin: 0 0 12px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--accent2);
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      margin-bottom: 10px;
+    }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 6px 14px;
+      margin-bottom: 6px;
+    }
+    .who { font-weight: 750; font-size: 0.98rem; }
+    .when { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .role { font-size: 13px; color: #a8c0e8; margin-bottom: 8px; }
+    ul {
+      margin: 0;
+      padding-left: 1.1rem;
+      color: #b4c8ea;
+      font-size: 13.5px;
+    }
+    li { margin-bottom: 4px; }
+    li:last-child { margin-bottom: 0; }
+    .links {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(47, 107, 192, 0.2);
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    .links a {
+      color: #7cd7ff;
+      text-decoration: none;
+      font-weight: 650;
+    }
+    .links a:hover { text-decoration: underline; }
+    .stack {
+      font-size: 13px;
+      color: #b4c8ea;
+      line-height: 1.65;
+    }
+    .stack strong {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #dce6ff;
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+    footer {
+      margin-top: 36px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+      font-size: 11px;
+      color: var(--muted);
+    }
+    footer code { color: #7cd7ff; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <div class="bg-grid">
+    <div class="wrap">
+      <header>
+        <div class="profile-hero">
+          <div class="profile-photo-col">
+            <div class="profile-photo-frame">
+              <img src="/assets/images/author.png" alt="Ryo Okazaki" class="profile-photo" width="800" height="1000" decoding="async" />
+            </div>
+          </div>
+          <div class="profile-intro-col">
+            <p class="eyebrow">Profile</p>
+            <h1>Ryo Okazaki</h1>
+            <p class="lede">
+              <strong>Finance-native generalist.</strong> Arc: index operations → global reference data → transfer pricing → CoE-style data science for institutions—always where security masters, curves, and contract language meet the P&amp;L line.
+            </p>
+            <p class="lede">
+              <strong>How I ship:</strong> quant-grade cadence (rebalances, corporate actions, SQL discipline), advisory depth on funding and guarantees, then modern stacks—dbt/ELT, API and web ingestion, dashboards, risk and portfolio tooling, DSLs, document AI and LLM/RAG. <strong>Durable Python</strong> over throwaway decks; at home on English-first, global desks.
+            </p>
+            <div class="pills">
+              <span class="pill">Markets data</span>
+              <span class="pill">Risk &amp; portfolio</span>
+              <span class="pill">Python / SQL</span>
+              <span class="pill">LLM &amp; RAG</span>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <section>
+        <h2>Experience</h2>
+
+        <div class="card">
+          <div class="row">
+            <span class="who">AI startup</span>
+            <span class="when">2025 –</span>
+          </div>
+          <div class="role">Data scientist · center-of-excellence consulting</div>
+          <ul>
+            <li>ELT with dbt, data acquisition (API / scraping), document AI (OCR + LLMs), chatbot / RAG delivery.</li>
+            <li>Cross-functional support for asset managers, banks, and digital channels.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <span class="who">Asset management</span>
+            <span class="when">2023 – 24</span>
+          </div>
+          <div class="role">Market / reference data</div>
+          <ul>
+            <li>Securities coverage (equities, rates, derivatives), corporate actions, desk support, SQL-heavy QA—mostly in English.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <span class="who">Big4</span>
+            <span class="when">2023</span>
+          </div>
+          <div class="role">Consultant · financial services · transfer pricing</div>
+          <ul>
+            <li>Pricing &amp; documentation for intercompany financing; ratings work; APA-related translation for banking clients.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <span class="who">Investment bank</span>
+            <span class="when">2021 – 23</span>
+          </div>
+          <div class="role">Quantitative analyst · index operations</div>
+          <ul>
+            <li>Index maintenance, rebalances, factor work—automated heavy Excel / Python workflows and built core SQL skills.</li>
+          </ul>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <span class="who">Independent work</span>
+            <span class="when">2024</span>
+          </div>
+          <div class="role">Multi-asset risk &amp; analytics engineering — builds &amp; open source</div>
+          <ul>
+            <li>Risk-modelling DSLs, portfolio and flow dashboards, ML apps—Python end-to-end, desk-style tooling shipped as code.</li>
+          </ul>
+          <div class="links">
+            <a href="https://github.com/leo-magma/atlas" target="_blank" rel="noopener noreferrer">atlas</a>
+            · <a href="https://github.com/leo-magma/vql" target="_blank" rel="noopener noreferrer">vql</a>
+            · <a href="https://github.com/leo-magma/portfolio-management" target="_blank" rel="noopener noreferrer">portfolio</a>
+            · <a href="https://github.com/leo-magma/di" target="_blank" rel="noopener noreferrer">di</a>
+            · <a href="https://github.com/leo-magma/machine-learning" target="_blank" rel="noopener noreferrer">ml-app</a>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Education</h2>
+        <div class="card">
+          <div class="row">
+            <span class="who">BA · social sciences / international studies</span>
+            <span class="when">2016 – 21 · Japan</span>
+          </div>
+          <ul>
+            <li>Economics &amp; data in English; ~9 months US study abroad (coursework incl. game theory).</li>
+          </ul>
+        </div>
+      </section>
+
+      <section>
+        <h2>Credentials &amp; tools</h2>
+        <div class="card stack">
+          <strong>Certification</strong>
+          CMA
+        </div>
+        <div class="card stack" style="margin-top:10px">
+          <strong>Languages</strong>
+          Professional English in global teams; long-form study abroad.
+        </div>
+        <div class="card stack" style="margin-top:10px">
+          <strong>Stack</strong>
+          Python · SQL · VBA · dbt · Snowflake · Django · Streamlit · Pandas · scikit-learn · Transformers · Prefect · Bloomberg · Eikon · Jupyter / VS Code / PyCharm
+        </div>
+      </section>
+
+      <footer>
+        Part of Atlas Suite — source: <code>static/author.html</code>
+      </footer>
+    </div>
+  </div>
+</body>
+</html>
